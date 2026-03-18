@@ -14,7 +14,7 @@
   ├─  4. UIUtils        — toast, modales, switchView
   ├─  5. SectorModule   — navigation onglets, renderStockView, renderGlobalView
   ├─  6. SettingsModule — réglages, CRUD secteurs/emplacements 2 niveaux
-  ├─  6b. ScanModule    — scan natif <input capture>, parseGS1, lookup BDPM/GUDID
+  ├─  6b. ScanModule    — scan vidéo natif RAF, parseGS1, lookup BDPM/GUDID
   ├─  6c. MovementModule— entrée, sortie (délivrance/destruction), transfert
   ├─  7. ReportModule   — extractions périmés, stock bas, export CSV
   ├─  8. InventoryModule— vérification inventaire, purge périmés, session localStorage
@@ -368,6 +368,20 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   min-width: 36px; /* touch target */
 }
 .btn-icon:active { opacity: .8; }
+
+/* ── Affichage lot/péremption inline sur grand écran ── */
+@media (min-width: 600px) {
+  .product-row-meta { display: flex !important; gap: 16px; align-items: center; }
+  .product-lot-inline { display: inline !important; }
+  .product-expiry-inline { display: inline !important; }
+  .btn-toggle-lots { display: none !important; }
+  .lots-detail-panel { display: block !important; }
+}
+@media (max-width: 599px) {
+  .product-lot-inline { display: none; }
+  .product-expiry-inline { display: none; }
+  .lots-detail-panel { display: none; }
+}
 
 /* ============================================================
    BADGES
@@ -1237,7 +1251,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   'use strict';
 
   /* ── Version courante du schéma JSON ── */
-  var SCHEMA_VERSION = '0.0.32';
+  var SCHEMA_VERSION = '0.0.34';
 
   /* Unités disponibles — déduites des formes BDPM (CIS_bdpm.txt) */
   var STOCK_UNITS = [
@@ -2664,18 +2678,24 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     /* Colonne droite */
     if (!hasMultiLots) {
       var e0 = sorted[0];
-      html += '<div style="text-align:right;font-size:10px;font-family:monospace;flex-shrink:0;color:var(--text3)">';
-      if (e0.lot) html += escH(e0.lot) + '<br>';
-      if (e0.expiry) {
-        var ec = expiryStatus(e0.expiry, alertDays);
-        var ecol = ec === 'danger' ? 'var(--danger)' : ec === 'warn' ? 'var(--warn)' : 'var(--text3)';
-        html += '<span style="color:' + ecol + '">' + displayDate(e0.expiry) + '</span>';
-      }
-      html += '<br><button class="btn btn-ghost" style="padding:1px 4px;font-size:9px;margin-top:2px" '
-        + 'data-edit-location="' + escH(e0.id) + '" title="Changer emplacement">✎ Emplacement</button>';
+      var ec0 = e0.expiry ? expiryStatus(e0.expiry, alertDays) : 'ok';
+      var ecol0 = ec0 === 'danger' ? 'var(--danger)' : ec0 === 'warn' ? 'var(--warn)' : 'var(--text3)';
+      /* Colonne droite : lot + péremption toujours visibles */
+      html += '<div style="text-align:right;font-size:10px;font-family:monospace;flex-shrink:0">';
+      if (e0.lot) html += '<span style="color:var(--text3)">' + escH(e0.lot) + '</span><br>';
+      if (e0.expiry) html += '<span style="color:' + ecol0 + ';font-weight:600">' + displayDate(e0.expiry) + '</span><br>';
+      html += '<button class="btn btn-ghost" style="padding:1px 4px;font-size:9px;margin-top:2px" '
+        + 'data-edit-location="' + escH(e0.id) + '" title="Changer emplacement">✎ Empl.</button>';
       html += '</div>';
     } else {
-      html += '<button class="btn btn-ghost btn-sm" style="flex-shrink:0" data-toggle-lots="' + escH(group.productId) + '">Lots (' + sorted.length + ')</button>';
+      /* Multi-lots : bouton toggle + résumé péremptions inline */
+      var nextExp = sorted.find(function(e) { return e.expiry; });
+      var ec1 = nextExp ? expiryStatus(nextExp.expiry, alertDays) : 'ok';
+      var ecol1 = ec1 === 'danger' ? 'var(--danger)' : ec1 === 'warn' ? 'var(--warn)' : 'var(--text3)';
+      html += '<div style="text-align:right;flex-shrink:0">';
+      if (nextExp) html += '<div style="font-size:10px;font-family:monospace;color:' + ecol1 + ';margin-bottom:2px">' + displayDate(nextExp.expiry) + '</div>';
+      html += '<button class="btn btn-ghost btn-sm" data-toggle-lots="' + escH(group.productId) + '">Lots (' + sorted.length + ')</button>';
+      html += '</div>';
     }
     html += '</div>';
 
@@ -2727,24 +2747,20 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       + '<input type="number" id="modal-product-alert-qty" inputmode="numeric" value="' + (product.alertQtyMin || 0) + '" min="0">'
       + '<div class="form-hint">Alerte si la quantité tombe à ce seuil ou en dessous. 0 = désactivé.</div>'
       + '</div>'
-      + '<div class="form-group">'
-      + '<label>Unité</label>'
-      + '<select id="modal-product-unit">' + buildUnitOptions(product.unit || 'unite') + '</select>'
-      + '</div>';
+      /* unité non affichée ici — déterminée par l'API et le mode du secteur */
 
     var footerHtml =
       '<button class="btn btn-secondary" data-close-modal="modal-product-alert">Annuler</button>'
       + '<button class="btn btn-primary" id="btn-save-product-alert">Enregistrer</button>';
 
-    var modal = createModal('modal-product-alert', '⚙ Paramètres produit', bodyHtml, footerHtml, 'sm');
+    var modal = createModal('modal-product-alert', '⚙ Alerte stock', bodyHtml, footerHtml, 'sm');
     if (!modal) return;
 
     modal.addEventListener('click', function(e) {
       if (e.target.id !== 'btn-save-product-alert') return;
       var qtyInput  = document.getElementById('modal-product-alert-qty');
-      var unitInput = document.getElementById('modal-product-unit');
       product.alertQtyMin = qtyInput  ? Math.max(0, parseInt(qtyInput.value, 10)  || 0) : product.alertQtyMin;
-      product.unit        = unitInput ? unitInput.value.trim() || product.unit           : product.unit;
+      /* unit non modifiable depuis ce panneau */
       product._updatedAt  = Date.now();
       storeUpsertProduct(product);
       fsScheduleSave();
@@ -3287,7 +3303,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     html += '<button class="btn btn-secondary btn-block" id="btn-settings-import-lib">📚 Importer librairie</button>';
     html += '<button class="btn btn-warning btn-block" id="btn-settings-inventory">📋 Inventaire / Purge</button>';
     html += '</div>';
-    html += '<div class="form-hint" style="margin-top:8px">Version : STOCK v0.0.32</div>';
+    html += '<div class="form-hint" style="margin-top:8px">Version : STOCK v0.0.34</div>';
     html += '</div>';
 
     /* ─ Mode de deploiement ─ */
@@ -3437,7 +3453,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
    6b. SCAN MODULE
    Gestion de la caméra, décodage datamatrix GS1, lookup produit,
    popup quantité et popup création manuelle.
-   Utilise BarcodeDetector (API native) avec fallback saisie manuelle.
+   Scan vidéo natif : getUserMedia + BarcodeDetector RAF 60fps.
+   Fallback saisie manuelle si caméra indisponible.
    ===================================================================== */
 (function() {
   'use strict';
@@ -3459,8 +3476,9 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
   /* ── API BarcodeDetector disponible ? ── */
   /* BarcodeDetector disponible ? (Chrome Android, Safari 17+, pas Firefox) */
+  /* isBarcodeDetectorAvailable — scan via getUserMedia uniquement désormais */
   function isBarcodeDetectorAvailable() {
-    return ('BarcodeDetector' in window);
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   }
 
   /* ── Bip sonore de confirmation ── */
@@ -3482,33 +3500,19 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
   /* ── Démarrer le scan caméra ── */
   /* Démarrer un scan.
-     Si BarcodeDetector dispo : déclenche la caméra native via <input capture>.
+     Si getUserMedia disponible : ouvre le scan vidéo natif.
      Sinon : saisie manuelle. */
   function startScan(context, subtype, targetSectorId, autoRescan) {
     _scanContext = context;
     _scanSubtype = subtype || null;
     _scanTarget  = targetSectorId || null;
     _autoRescan  = !!autoRescan;
-    /* Mode maître : douchette via saisie manuelle avec focus GS1 */
     var isMaster = window.deployGetMode && window.deployGetMode() === 'master';
-    if (isMaster) {
-      openManualEntryModal(null);
-      return;
-    }
-    if (!isBarcodeDetectorAvailable()) { openManualEntryModal(null); return; }
-    _triggerNativeCapture();
+    if (isMaster) { openManualEntryModal(null); return; }
+    _openVideoScan();
   }
 
-  /* ── Modale de scan caméra ── */
-  /* Lance la caméra native du téléphone via un <input file capture>.
-     Après prise de photo, BarcodeDetector analyse l'image statique. */
-  /* Lance la caméra native via <input capture>.
-     Trois cas après analyse :
-       1. Aucun code dans l'image  → modale [Réessayer] / [Saisie manuelle]
-       2. Code détecté, GTIN inconnu de l'API → openUnknownProductModal (pas de réessai)
-       3. Code détecté, GTIN en cache         → openQtyModal directement */
-  /* ══════════════════════════════════════════════════════════════
-     SCAN ENGINE — RAF 60fps + BarcodeDetector natif (Android/Chrome)
+  /* ── Scan vidéo natif (getUserMedia + BarcodeDetector RAF 60fps) ──
      Fallback : photo <input capture> si getUserMedia absent (file://)
      ZXing supprimé — cible Android Chrome uniquement
      ══════════════════════════════════════════════════════════════ */
@@ -3533,6 +3537,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   }
 
   /* ── getUserMedia disponible ? ── */
+  /* Obsolète — check intégré dans isBarcodeDetectorAvailable */
   function _isGetUserMediaAvailable() {
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   }
@@ -3578,7 +3583,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       .catch(function(err) {
         window.dbg('getUserMedia erreur: ' + err.message, 'warn');
         _closeVideoScan();
-        _triggerPhotoCapture();
+        showToast('Caméra indisponible — utilisez la saisie manuelle', 'warn');
+        openManualEntryModal(null);
       });
 
     var btnClose  = document.getElementById('btn-scan-close');
@@ -3609,7 +3615,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     var video    = document.getElementById('scan-video');
     if (!detector || !video) {
       _closeVideoScan();
-      _triggerPhotoCapture();
+      showToast('Détecteur indisponible — utilisez la saisie manuelle', 'warn');
+      openManualEntryModal(null);
       return;
     }
 
@@ -3640,111 +3647,24 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     if (el) el.textContent = msg;
   }
 
-  /* ── Fallback photo (file:// ou BarcodeDetector absent) ── */
-  function _triggerPhotoCapture() {
-    var inp = document.getElementById('_scan-capture-input');
-    if (!inp) {
-      inp = document.createElement('input');
-      inp.type    = 'file';
-      inp.accept  = 'image/*';
-      inp.capture = 'environment';
-      inp.id      = '_scan-capture-input';
-      inp.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none';
-      document.body.appendChild(inp);
-    }
-    var fresh = inp.cloneNode(false);
-    inp.parentNode.replaceChild(fresh, inp);
-    inp = fresh;
-    inp.id = '_scan-capture-input';
-
-    inp.addEventListener('change', function() {
-      var file = inp.files && inp.files[0];
-      if (!file) return;
-      _setStatus('Analyse en cours…');
-      var img = new Image();
-      var url = URL.createObjectURL(file);
-      img.onload = function() {
-        URL.revokeObjectURL(url);
-        var detector = _getNativeDetector();
-        if (!detector) { _setStatus(''); _openRetryModal(); return; }
-        var canvas = document.createElement('canvas');
-        canvas.width  = img.naturalWidth  || img.width;
-        canvas.height = img.naturalHeight || img.height;
-        canvas.getContext('2d').drawImage(img, 0, 0);
-        detector.detect(canvas).then(function(barcodes) {
-          _setStatus('');
-          if (barcodes && barcodes.length > 0) {
-            playBeep(); _onBarcodeDetected(barcodes[0].rawValue);
-          } else {
-            _openRetryModal();
-          }
-        }).catch(function() { _setStatus(''); _openRetryModal(); });
-      };
-      img.onerror = function() { URL.revokeObjectURL(url); _openRetryModal(); };
-      img.src = url;
-    });
-
-    inp.value = '';
-    inp.click();
-  }
 
   /* ── Point d'entrée scan ── */
+  /* Point d'entrée scan vidéo */
   function _triggerNativeCapture() {
-    if (_isGetUserMediaAvailable()) {
-      _openVideoScan();
-    } else {
-      _triggerPhotoCapture();
-    }
+    _openVideoScan();
   }
 
-  /* Modale proposée quand l'image ne contient aucun code lisible.
-     Ne s'affiche PAS quand le code est lu mais inconnu de l'API. */
-  /* Modale proposée quand l'image ne contient aucun code lisible.
-     Ne s'affiche PAS quand le code est lu mais inconnu de l'API. */
-  function _openRetryModal() {
-    var bodyHtml =
-      '<div style="text-align:center;padding:8px 0 16px">'
-      + '<div style="font-size:32px;margin-bottom:10px">&#x1F4F7;</div>'
-      + '<div style="font-size:13px;font-weight:600;margin-bottom:6px">Code non détecté</div>'
-      + '<div style="font-size:11px;color:var(--text2)">La photo ne contient pas de code lisible.<br>Rapprochez-vous et assurez-vous que le code est bien net.</div>'
-      + '</div>';
-    var footerHtml =
-      '<button class="btn btn-secondary" id="btn-retry-manual">Saisie manuelle</button>'
-      + '<button class="btn btn-primary"   id="btn-retry-scan">&#x1F4F7; Réessayer</button>';
-    var modal = createModal('modal-scan-retry', 'Photo illisible', bodyHtml, footerHtml, 'sm');
-    if (!modal) return;
-    modal.addEventListener('click', function(e) {
-      if (e.target.id === 'btn-retry-scan') {
-        closeModal('modal-scan-retry');
-        _triggerNativeCapture();
-        return;
-      }
-      if (e.target.id === 'btn-retry-manual') {
-        closeModal('modal-scan-retry');
-        openManualEntryModal(null);
-      }
-    });
-  }
 
-  /* ── Démarrage caméra ── */
-  /* Obsolète — remplacé par _triggerNativeCapture */
-  function _startCamera() {}
 
-  /* ── Boucle de détection ── */
-  /* Obsolète — remplacé par _triggerNativeCapture */
-  function _scanLoop() {}
+
+
 
   /* ── Arrêt caméra ── */
   function stopScan() {
-    _setStatus('');
     _closeVideoScan();
-    closeModal('modal-scan');
   }
 
-  function _setStatus(msg) {
-    var el = document.getElementById('scan-status');
-    if (el) el.textContent = msg;
-  }
+
 
   /* ── Code détecté ── */
   function _onBarcodeDetected(raw) {
@@ -3924,16 +3844,11 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       + qtyHint
       + '</div>';
 
-    /* Pour OUT : choix délivrance / destruction */
-    if (_scanContext === 'out') {
-      bodyHtml +=
-        '<div class="form-group" style="margin-top:12px">'
-        + '<label>Type de sortie</label>'
-        + '<select id="modal-qty-subtype">'
-        + '<option value="delivery">Délivrance</option>'
-        + '<option value="destruction">Destruction</option>'
-        + '</select>'
-        + '</div>';
+    /* Pour OUT : afficher le type déjà choisi (délivrance/destruction) */
+    if (_scanContext === 'out' && _scanSubtype) {
+      var subtypeLabel = _scanSubtype === 'destruction' ? '🗑 Destruction' : '💊 Délivrance';
+      bodyHtml += '<div style="font-size:11px;color:var(--text2);margin-top:8px">'
+        + 'Type : <strong>' + subtypeLabel + '</strong></div>';
     }
 
     /* Pour TRANSFER : choix secteur destination */
@@ -3980,8 +3895,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     var qtyInput = document.getElementById('modal-qty-value');
     var qty = qtyInput ? Math.max(1, parseInt(qtyInput.value, 10) || 1) : 1;
 
-    var subtypeInput = document.getElementById('modal-qty-subtype');
-    var subtype = subtypeInput ? subtypeInput.value : _scanSubtype;
+    /* Subtype déjà défini avant le scan via openActionModal */
+    var subtype = _scanSubtype;
 
     var targetInput = document.getElementById('modal-qty-target');
     var targetSectorId = targetInput ? targetInput.value : _scanTarget;
@@ -6090,35 +6005,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       });
     }
 
-    /* Actions secteur — gere par renderModeBar() (InventoryModule) */
+    /* Actions secteur — entièrement gérées par renderModeBar() */
     if (window.renderModeBar) window.renderModeBar();
-    /* Garder les refs pour les cas sans InventoryModule */
-    var btnAdd = document.getElementById('btn-action-add');
-    var btnTransfer = document.getElementById('btn-action-transfer');
-    var btnOut = document.getElementById('btn-action-out');
-    if (btnAdd) {
-      btnAdd.addEventListener('click', function() {
-        openActionModal('add');
-      });
-    }
-    if (btnTransfer) {
-      btnTransfer.addEventListener('click', function() {
-        var sectorId = getCurrentSectorId();
-        var others = storeGetSectors().filter(function(s) {
-          return s.id !== sectorId && s.id !== 'global';
-        });
-        if (others.length === 0) {
-          showToast('Aucun autre secteur disponible pour le transfert', 'warn');
-          return;
-        }
-        openActionModal('transfer');
-      });
-    }
-    if (btnOut) {
-      btnOut.addEventListener('click', function() {
-        openActionModal('out');
-      });
-    }
 
     /* Import fichier fallback */
     var fileInput = document.getElementById('file-input-main');
