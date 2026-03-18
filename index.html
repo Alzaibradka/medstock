@@ -6147,8 +6147,9 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   };
 
   function injectManifest() {
-    var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-    var url  = URL.createObjectURL(blob);
+    /* data: URI requis — blob: URL refusé par Chrome sur HTTPS pour les manifests */
+    var json = JSON.stringify(manifest);
+    var url  = 'data:application/manifest+json,' + encodeURIComponent(json);
     var link = document.getElementById('pwa-manifest');
     if (link) link.href = url;
     var icon = document.getElementById('pwa-icon');
