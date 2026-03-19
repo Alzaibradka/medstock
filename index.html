@@ -70,10 +70,10 @@
   · GitHub Pages : blob: URI SW bloqué → install PWA impossible (sw.js séparé à faire)
 
   À FAIRE (prévu)
-  · Barre de recherche produit dans renderStockView
+  [OK] Barre de recherche produit dans renderStockView (filtre temps réel)
   · Réorganisation armoires/étagères dans Réglages → Secteurs (▲▼)
   · sw.js séparé pour GitHub Pages (5 lignes)
-  · Stock = 0 visible si seuil > 0 (ligne différenciée)
+  [OK] Stock = 0 visible si alertQtyMin > 0 — badge «À commander», fond rouge pâle
   · Inventaire théorique vide à remplir
   · Bon de commande (alertQtyOptimal → quantité à commander)
   · Verrouillage mode déploiement en production
@@ -415,6 +415,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 .cell-warn   { background: rgba(245,166,35,.12)  !important; }
 .cell-danger { background: rgba(255,87,87,.12)   !important; }
 .cell-low    { background: rgba(245,166,35,.10)   !important; }
+.cell-zero   { background: rgba(255,87,87,.07)    !important; opacity: .75; }
 
 /* ============================================================
    FORMULAIRES
@@ -1578,7 +1579,16 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   }
   function deleteStockEntry(id) {
     var s = getStockById(id);
-    if (s) {
+    if (!s) { _state._updatedAt = Date.now(); return; }
+    /* Vérifier si le produit a un seuil bas > 0 */
+    var product = _state.products.find(function(p) { return p.id === s.productId; });
+    var hasMin  = product && (product.alertQtyMin || 0) > 0;
+    if (hasMin) {
+      /* Conserver la ligne avec qty=0 pour signaler la rupture */
+      s.qty        = 0;
+      s._updatedAt = Date.now();
+    } else {
+      /* Suppression normale */
       s._deletedAt = Date.now();
       s._updatedAt = Date.now();
     }
@@ -2357,9 +2367,12 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       var badgeHtml = alertCount > 0
         ? '<span class="sector-tab-badge">' + alertCount + '</span>'
         : '';
+      var modeIcon = s.id === 'global' ? '' :
+        (s.mode === 'box' ? '<span style="font-size:10px;opacity:.7;margin-right:3px">📦</span>'
+                         : '<span style="font-size:10px;opacity:.7;margin-right:3px">💊</span>');
       html += '<button class="sector-tab' + (isActive ? ' active' : '') + '"'
         + ' data-sector-id="' + escH(s.id) + '">'
-        + escH(s.name) + badgeHtml
+        + modeIcon + escH(s.name) + badgeHtml
         + '</button>';
     });
 
@@ -2378,13 +2391,14 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         return;
       }
       if (e.target.closest('#btn-add-sector-tab')) {
-        openSettingsModal();
+        openSettingsModal('sectors');
       }
     });
   }
 
   /* ── Sélection d'un secteur ── */
   function selectSector(sectorId) {
+    _searchQuery = ''; /* Reset recherche au changement de secteur */
     window.dbg('selectSector(' + sectorId + ')', 'info');
     _currentSectorId = sectorId;
     switchView('sector');
@@ -2483,6 +2497,12 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       /* Réassigner emplacement d'une entrée de stock */
       var splitBtn = e.target.closest('[data-split-entry]');
       if (splitBtn) { openSplitModal(splitBtn.dataset.splitEntry, sector.id); return; }
+      /* Effacer recherche */
+      if (e.target.id === 'btn-search-clear') {
+        _searchQuery = '';
+        renderSectorContent();
+        return;
+      }
       var moveBtn = e.target.closest('[data-move-entry]');
       if (moveBtn) {
         /* Ouvrir popup déplacement — l'utilisateur choisit l'emplacement cible */
@@ -2596,6 +2616,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   }
 
   /* Vue secteur : liste stock */
+  var _searchQuery = ''; /* filtre recherche produit actif */
+
   function renderStockView(container, sector) {
     var stock     = storeGetStockBySector(sector.id);
     var settings  = storeGetSettings();
@@ -2628,10 +2650,36 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       return exp || low;
     }).length;
 
+    /* Filtrer par recherche */
+    var filteredGroups = _searchQuery
+      ? groups.filter(function(g) {
+          var name = g.product ? g.product.name.toLowerCase() : '';
+          return name.indexOf(_searchQuery.toLowerCase()) !== -1;
+        })
+      : groups;
+
     var html = '<div class="module-content">';
-    html += '<div style="display:flex;gap:12px;align-items:center;padding:6px 0 4px;flex-wrap:wrap">';
-    html += '<span style="font-size:11px;color:var(--text2)">' + groups.length + ' ref. &mdash; ' + totalUnits + ' unite' + (totalUnits > 1 ? 's' : '') + '</span>';
-    if (alertCount > 0) html += '<span class="badge badge-danger">' + alertCount + ' alerte' + (alertCount > 1 ? 's' : '') + '</span>';
+    /* Barre de recherche */
+    html += '<div style="display:flex;gap:8px;align-items:center;padding:6px 0 4px">';
+    html += '<input type="search" id="stock-search" placeholder="Rechercher un produit…"'
+      + ' value="' + escH(_searchQuery) + '"'
+      + ' style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;'
+      + 'color:var(--text);padding:7px 12px;font-size:12px;outline:none;min-width:0">';
+    if (_searchQuery) {
+      html += '<button id="btn-search-clear" style="background:none;border:none;color:var(--text3);'
+        + 'font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0">×</button>';
+    }
+    html += '</div>';
+    /* Résumé */
+    html += '<div style="display:flex;gap:12px;align-items:center;padding:2px 0 4px;flex-wrap:wrap">';
+    html += '<span style="font-size:11px;color:var(--text2)">';
+    if (_searchQuery) {
+      html += filteredGroups.length + ' résultat' + (filteredGroups.length > 1 ? 's' : '') + ' pour « ' + escH(_searchQuery) + ' »';
+    } else {
+      html += groups.length + ' ref. &mdash; ' + totalUnits + ' unite' + (totalUnits > 1 ? 's' : '');
+    }
+    html += '</span>';
+    if (alertCount > 0 && !_searchQuery) html += '<span class="badge badge-danger">' + alertCount + ' alerte' + (alertCount > 1 ? 's' : '') + '</span>';
     html += '</div>';
 
     var locations = sector.locations || [];
@@ -2780,11 +2828,14 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     var alertQtyMin     = product ? (product.alertQtyMin     || 0) : 0;
     var alertQtyOptimal = product ? (product.alertQtyOptimal || 0) : 0;
     var pkgQtyRow       = product ? (product.pkgQty          || 0) : 0;
-    var isLow = alertQtyMin > 0 && group.totalQty <= alertQtyMin;
-    if (isLow && worstStatus === 'ok') worstStatus = 'low';
+    var isZero = group.totalQty === 0 && alertQtyMin > 0;
+    var isLow  = alertQtyMin > 0 && group.totalQty > 0 && group.totalQty <= alertQtyMin;
+    if (isZero && worstStatus === 'ok') worstStatus = 'zero';
+    else if (isLow && worstStatus === 'ok') worstStatus = 'low';
 
     var rowClass = worstStatus === 'danger' ? 'cell-danger'
                  : worstStatus === 'warn'   ? 'cell-warn'
+                 : worstStatus === 'zero'   ? 'cell-zero'
                  : worstStatus === 'low'    ? 'cell-low' : '';
 
     /* Trier les lots FEFO pour l'affichage */
@@ -3667,16 +3718,33 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       locs.forEach(function(loc) {
         bodyHtml += '<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:6px;padding:8px">';
         /* En-tête loc : nom + supprimer */
+        var locIdx = locs.indexOf(loc);
         bodyHtml += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">';
+        bodyHtml += '<div style="display:flex;flex-direction:column;gap:1px;flex-shrink:0">';
+        bodyHtml += '<button class="btn btn-ghost" style="padding:1px 5px;font-size:9px;line-height:1" '
+          + (locIdx === 0 ? 'disabled ' : '')
+          + 'data-move-loc="' + escH(loc.id) + ':up">▲</button>';
+        bodyHtml += '<button class="btn btn-ghost" style="padding:1px 5px;font-size:9px;line-height:1" '
+          + (locIdx === locs.length - 1 ? 'disabled ' : '')
+          + 'data-move-loc="' + escH(loc.id) + ':down">▼</button>';
+        bodyHtml += '</div>';
         bodyHtml += '<span style="font-size:12px;font-weight:600;flex:1">' + escH(loc.name) + '</span>';
         bodyHtml += '<button class="btn btn-danger btn-sm" data-remove-location="' + escH(loc.id) + '">✕</button>';
         bodyHtml += '</div>';
         /* Sous-emplacements */
         var subs = loc.sublocs || [];
         if (subs.length > 0) {
-          subs.forEach(function(sub) {
+          subs.forEach(function(sub, subIdx) {
             bodyHtml += '<div style="display:flex;align-items:center;gap:6px;padding:2px 0 2px 8px;font-size:11px;color:var(--text2)">';
-            bodyHtml += '<span style="flex:1">&#x203a; ' + escH(sub.name) + '</span>';
+            bodyHtml += '<div style="display:flex;flex-direction:column;gap:1px;flex-shrink:0">';
+            bodyHtml += '<button class="btn btn-ghost" style="padding:0 4px;font-size:8px;line-height:1" '
+              + (subIdx === 0 ? 'disabled ' : '')
+              + 'data-move-subloc="' + escH(loc.id) + '/' + escH(sub.id) + ':up">▲</button>';
+            bodyHtml += '<button class="btn btn-ghost" style="padding:0 4px;font-size:8px;line-height:1" '
+              + (subIdx === subs.length - 1 ? 'disabled ' : '')
+              + 'data-move-subloc="' + escH(loc.id) + '/' + escH(sub.id) + ':down">▼</button>';
+            bodyHtml += '</div>';
+            bodyHtml += '<span style="flex:1">› ' + escH(sub.name) + '</span>';
             bodyHtml += '<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:1px 5px" data-remove-subloc="' + escH(loc.id) + '/' + escH(sub.id) + '">✕</button>';
             bodyHtml += '</div>';
           });
@@ -3720,6 +3788,21 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         addSublocationToModal(sectorId, addSub.dataset.addSubloc); return;
       }
       /* Supprimer emplacement principal */
+      /* Déplacer armoire ▲▼ */
+      var moveLoc = e.target.closest('[data-move-loc]');
+      if (moveLoc && sectorId) {
+        var parts = moveLoc.dataset.moveLoc.split(':');
+        moveLocation(sectorId, parts[0], parts[1]);
+        closeModal('modal-sector'); openSectorModal(sectorId); return;
+      }
+      /* Déplacer étagère ▲▼ */
+      var moveSub = e.target.closest('[data-move-subloc]');
+      if (moveSub && sectorId) {
+        var subParts = moveSub.dataset.moveSubloc.split(':');
+        var locSubParts = subParts[0].split('/');
+        moveSublocation(sectorId, locSubParts[0], locSubParts[1], subParts[1]);
+        closeModal('modal-sector'); openSectorModal(sectorId); return;
+      }
       var removeBtn = e.target.closest('[data-remove-location]');
       if (removeBtn && sectorId) {
         removeLocationFromSector(sectorId, removeBtn.dataset.removeLocation);
@@ -3766,6 +3849,39 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   }
 
   /* ── Ajouter un emplacement (dans la modale édition) ── */
+
+  /* Déplace une armoire vers le haut ou le bas dans sector.locations[] */
+  function moveLocation(sectorId, locId, direction) {
+    var sector = storeGetSectorById(sectorId);
+    if (!sector || !sector.locations) return;
+    var locs = sector.locations;
+    var idx  = locs.findIndex(function(l) { return l.id === locId; });
+    if (idx === -1) return;
+    var swap = direction === 'up' ? idx - 1 : idx + 1;
+    if (swap < 0 || swap >= locs.length) return;
+    var tmp  = locs[idx]; locs[idx] = locs[swap]; locs[swap] = tmp;
+    sector._updatedAt = Date.now();
+    storeUpsertSector(sector);
+    fsScheduleSave();
+  }
+
+  /* Déplace une étagère vers le haut ou le bas dans loc.sublocs[] */
+  function moveSublocation(sectorId, locId, subId, direction) {
+    var sector = storeGetSectorById(sectorId);
+    if (!sector || !sector.locations) return;
+    var loc  = sector.locations.find(function(l) { return l.id === locId; });
+    if (!loc || !loc.sublocs) return;
+    var subs = loc.sublocs;
+    var idx  = subs.findIndex(function(s) { return s.id === subId; });
+    if (idx === -1) return;
+    var swap = direction === 'up' ? idx - 1 : idx + 1;
+    if (swap < 0 || swap >= subs.length) return;
+    var tmp  = subs[idx]; subs[idx] = subs[swap]; subs[swap] = tmp;
+    sector._updatedAt = Date.now();
+    storeUpsertSector(sector);
+    fsScheduleSave();
+  }
+
   function addLocationToModal(sectorId) {
     var input = document.getElementById('modal-new-location');
     if (!input || !input.value.trim()) return;
@@ -3837,7 +3953,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   }
 
   /* ── Modale réglages et exposition ── */
-  function openSettingsModal() {
+  function openSettingsModal(initialTab) {
     /* Toggle : si visible (classe open), fermer. Si absente ou fermée, (re)créer. */
     var existing = document.getElementById('modal-settings');
     if (existing && existing.classList.contains('open')) {
@@ -3849,8 +3965,9 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     var modal = createModal('modal-settings', '⚙️ Réglages', bodyHtml, '', 'md');
     if (!modal) return;
 
-    /* Rendre le contenu dans le div dédié */
-    _renderSettingsInto(document.getElementById('settings-modal-content'));
+    var container = document.getElementById('settings-modal-content');
+    if (initialTab) container._activeTab = initialTab;
+    _renderSettingsInto(container);
   }
 
   /* Rend le HTML des réglages dans n'importe quel container */
@@ -4060,12 +4177,12 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       });
 
       if (newQty <= 0) {
-        entry._deletedAt = Date.now();
+        storeDeleteStockEntry(entry.id); /* préservé si alertQtyMin > 0 */
       } else {
         entry.qty        = newQty;
         entry._updatedAt = Date.now();
+        storeUpsertStockEntry(entry);
       }
-      storeUpsertStockEntry(entry);
       fsScheduleSave();
       renderSectorContent();
       loadProducts();
@@ -5068,6 +5185,23 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       showToast('Produit non trouvé en stock dans ce secteur', 'danger');
       return false;
     }
+    /* Alerte FEFO : lot scanné ≠ lot FEFO optimal → modale de choix */
+    if (gs1.lot && entry.lot && gs1.lot !== entry.lot) {
+      var _fefoStock = storeGetStockBySector(sectorId).filter(function(e) {
+        return e.productId === product.id && e.qty > 0;
+      }).sort(function(a, b) {
+        if (!a.expiry && !b.expiry) return 0;
+        if (!a.expiry) return 1;
+        if (!b.expiry) return -1;
+        return a.expiry < b.expiry ? -1 : 1;
+      });
+      var _fefoEntry = _fefoStock[0] || null;
+      if (_fefoEntry && _fefoEntry.lot !== gs1.lot) {
+        /* Interrompre la sortie et afficher la modale */
+        _openFefoModal(product, gs1, qty, subtype, entry, _fefoEntry, sectorId);
+        return 'pending'; /* sortie suspendue — la modale prend le relais */
+      }
+    }
     if (entry.qty < qty) {
       showToast('Quantité insuffisante en stock (' + entry.qty + ' disponible)', 'danger');
       return false;
@@ -5205,6 +5339,78 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
     var toSec = storeGetSectorById(toSectorId);
     showToast('Transfert : ' + qty + ' ' + pluralUnit(product.unit || 'unite', qty) + ' vers ' + (toSec ? toSec.name : toSectorId), 'success');
+    return true;
+  }
+
+
+  /* Modale de choix FEFO :
+     propose lot optimal (FEFO) ou lot scanné */
+  function _openFefoModal(product, gs1, qty, subtype, scannedEntry, fefoEntry, sectorId) {
+    var unit = product.unit || 'u';
+    var bodyHtml =
+      '<div style="font-size:12px;font-weight:600;margin-bottom:10px">' + escH(product.name) + '</div>'
+      + '<div style="font-size:11px;color:var(--warn);margin-bottom:14px">'
+      + '⚠️ Le lot scanné n’est pas le plus proche en péremption.</div>'
+      + '<div style="display:flex;flex-direction:column;gap:8px">'
+      /* Bouton lot optimal */
+      + '<button class="btn btn-primary" id="btn-fefo-optimal" style="text-align:left;padding:12px">'
+      + '<div style="font-size:12px;font-weight:700">✓ Lot optimal (FEFO)</div>'
+      + '<div style="font-size:10px;opacity:.8">Lot ' + escH(fefoEntry.lot || '-')
+      + ' — expire le ' + displayDate(fefoEntry.expiry) + '</div>'
+      + '</button>'
+      /* Bouton lot scanné */
+      + '<button class="btn btn-secondary" id="btn-fefo-scanned" style="text-align:left;padding:12px">'
+      + '<div style="font-size:12px;font-weight:600">Garder le lot scanné</div>'
+      + '<div style="font-size:10px;opacity:.8">Lot ' + escH(gs1.lot || '-')
+      + (scannedEntry && scannedEntry.expiry ? ' — expire le ' + displayDate(scannedEntry.expiry) : '')
+      + '</div>'
+      + '</button>'
+      + '</div>';
+
+    var footerHtml = '<button class="btn btn-ghost" data-close-modal="modal-fefo">Annuler</button>';
+    var modal = createModal('modal-fefo', '⚠️ Choix du lot', bodyHtml, footerHtml, 'sm');
+    if (!modal) return;
+
+    modal.addEventListener('click', function(e) {
+      if (e.target.id === 'btn-fefo-optimal') {
+        closeModal('modal-fefo');
+        /* Appliquer la sortie sur le lot FEFO */
+        var fefoGs1 = Object.assign({}, gs1, { lot: fefoEntry.lot, expiry: fefoEntry.expiry });
+        _applyOut(sectorId, product, fefoGs1, qty, subtype);
+        fsScheduleSave();
+        window.renderSectorNav();
+        window.renderSectorContent();
+      }
+      if (e.target.id === 'btn-fefo-scanned') {
+        closeModal('modal-fefo');
+        /* Appliquer la sortie sur le lot scanné — forcer en ignorant FEFO */
+        _applyOutDirect(sectorId, product, gs1, qty, subtype, scannedEntry);
+        fsScheduleSave();
+        window.renderSectorNav();
+        window.renderSectorContent();
+      }
+    });
+  }
+
+  /* Sortie directe sur une entrée spécifique (contourne _findBestEntryForOut) */
+  function _applyOutDirect(sectorId, product, gs1, qty, subtype, entry) {
+    if (!entry || entry.qty < qty) {
+      showToast('Quantité insuffisante', 'danger'); return false;
+    }
+    entry.qty -= qty;
+    if (entry.qty <= 0) {
+      storeDeleteStockEntry(entry.id);
+    } else {
+      storeUpsertStockEntry(entry);
+    }
+    storeAddMovement({
+      type: MOVEMENT_OUT, subtype: subtype || 'delivery',
+      sectorId: sectorId, targetSectorId: null,
+      productId: product.id, lot: entry.lot, expiry: entry.expiry,
+      qty: qty, note: 'Lot non-FEFO confirmé'
+    });
+    var unit = product.unit || 'unité';
+    showToast('− ' + qty + ' ' + pluralUnit(unit, qty) + ' sorti' + (qty > 1 ? 's' : '') + ' — ' + product.name, 'success');
     return true;
   }
 
