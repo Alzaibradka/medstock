@@ -32,112 +32,55 @@
   JOURNAL DE DÉVELOPPEMENT
   ======================================================================
 
-  SPRINT 1 (0.0.1) — Socle
-  [OK] HTML + CSS complet (charte LUPUS)
-  [OK] CoreUtils (escH, genId, fmtDate, parseGS1, alertes péremption)
-  [OK] Store (état centralisé, accesseurs, mutations, migrateData)
-  [OK] FSModule (adapté de LUPUS — mono-utilisateur, sans merge multi-postes)
-  [OK] Navigation secteurs (barre onglets, secteur Global fixe)
-  [OK] Module Réglages (créer/éditer secteur, paramètres globaux, fichier)
-  [OK] Modale démarrage FS (reprise handle, nouveau fichier, mode dégradé)
-  [OK] Toast + infrastructure modales
+  v0.0.1–0.0.14 — Socle, scan, mouvements, rapports (voir historique)
 
-  SPRINT 2 (0.0.2) — Scan & Catalogue + Mouvements
-  [OK] ScanModule : BarcodeDetector natif (Android Chrome / iOS Safari 17+)
-  [OK] Fallback saisie manuelle si BarcodeDetector indisponible
-  [OK] Lookup GUDID (API FDA) + fallback BDPM ANSM + cache local GTIN
-  [OK] Popup produit inconnu : création manuelle (nom, catégorie, unité)
-  [OK] Popup quantité post-scan (valeur 1 par défaut, effaçable)
-  [OK] MovementModule : entrée, sortie (délivrance/destruction), transfert
-  [OK] Sélection lot/péremption au scan, choix secteur destination (transfert)
+  v0.0.15–0.0.32 — Bugfixes majeurs, refactoring, PWA, merge JSON
 
-  SPRINT 3 (0.0.12)
-  · [OK] countAlertsInSector : badges nav = périmés + stock bas
-  · [OK] renderGlobalView : bandeau alertes, tri alertes en premier, compteurs
-  · [OK] renderStockView : résumé en tête, tri périmés > bientôt > stock bas > alpha
-  · [OK] renderProductRow : lot unique inline coloré, multi-lots FEFO, bouton 'Lots (N)'
+  v0.0.33 — Suppression mode photo, scan vidéo natif uniquement
+  v0.0.34 — Bugfixes : double modale sortie, unité non modifiable, lots inline
+  v0.0.35 — Fix pkgQty non déclaré, pluralUnit(), affichage boîtes
+  v0.0.36 — Réglages en 4 onglets (Général/Secteurs/Fichier/Déploiement)
+  v0.0.37 — Boîte sécable (transfert partiel), flag partial, badge entamée
+  v0.0.38 — Consolidation : suppression obsolètes, commentaires, numérotation
+  v0.0.39 — Bugs 1-8 : localStorage mode, nom structure, arborescence, drag DnD
+  v0.0.40 — Refonte alertes : badge fin de mois, seuils bas+optimal, rapport N jours
 
-  BUGFIXES + LOOKUP (0.0.13)
-  · [OK] BUG applyMovement : renderSectorContent() appelé même après échec sortie/transfert
-  · [OK] BUG _applyOut/_applyTransfer : retournent false au lieu de return muet
-  · [OK] lookupBDPM : medicaments-api.giygas.dev (15k+ médicaments AMM, màj 2x/jour)
-         Lookup CIP13 (?cip=3400...) puis CIP7 = slice(4,11) en fallback
-  · [OK] lookupGUDID : conservé en fallback DM (FDA), timeout 5s
-  · [OK] Ordre lookup : products[] local → giygas.dev → GUDID → saisie manuelle
-  NOTE : bibliothèque locale = products[] dans le Store
-         Produit créé manuellement (GTIN+nom) retrouvé au scan suivant
-         Liste médicaments famille à coder ultérieurement (CIP + nom + unité)
+  ÉTAT v0.0.40
+  [OK] Scan vidéo natif RAF 60fps + BarcodeDetector
+  [OK] Lookup giygas.dev (CIP13/CIP7) + GUDID fallback DM
+  [OK] ParseGS1 lot complet (_findVarEnd MIN_OFFSET=4)
+  [OK] Mouvements : entrée, sortie (délivrance/destruction), transfert, boîte sécable
+  [OK] Arborescence armoire→étagère repliable (armoires vides affichées)
+  [OK] Drag emplacement via bouton ⇆ (openMoveFromButton)
+  [OK] Drag réordonnement produits via poignée ↕
+  [OK] Mode maître/autonome/satellite + localStorage (plus de demande au démarrage)
+  [OK] Merge movements-sync (MergeModule)
+  [OK] Inventaire + purge périmés (InventoryModule)
+  [OK] Rapport : périmés N jours, mouvements (type+sous-type), stock global, CSV
+  [OK] Seuils produit : bas (alerte) + optimal (commande future)
+  [OK] Badges : rouge=périmé, jaune=fin de mois, rouge=stock bas
+  [OK] Nom structure + logo dans header (settings.unitName + appLogo)
+  [OK] Mode secteur non modifiable après création
+  [OK] Ordre manuel produits (settings.productOrder par secteur)
+  [OK] SW cache version dynamique (SCHEMA_VERSION)
 
-  SPRINT 4 (0.0.14) — ReportModule
-  · [OK] Modale rapport : 4 extractions (périmés, M+1, M+3, stock bas)
-  · [OK] Filtre par secteur ou tous les secteurs
-  · [OK] Tableau inline avec tri par date de péremption
-  · [OK] Export CSV (BOM UTF-8, compatible Excel)
-  · [OK] btn-extract branché sur openReportModal
+  BUGS CONNUS
+  · Drag DnD emplacement : crash silencieux sur données existantes (hors prod OK)
+  · Long press Android : menu natif non bloqué sur poignées
+  · GitHub Pages : blob: URI SW bloqué → install PWA impossible (sw.js séparé à faire)
 
-  FONCTIONNALITÉS IMPLÉMENTÉES (complètes)
-  · [OK] Sprint 5 : Mode douchette PC (focus GS1 + Enter natif en mode master)
-  · [OK] Sprint 6 : Merge JSON movements-sync (MergeModule)
-  · [OK] Mode déploiement maître/autonome/satellite (DeployModule)
-  · [OK] Import librairie produits (library.json)
-  · [OK] Export sectorisé (full/inventory-check/expiry-purge/monthly)
-  · [OK] Mode inventaire + purge périmés (InventoryModule)
-  · [OK] Emplacements 2 niveaux (armoire/étagère) par secteur
-  · [OK] Partage/mail après export (Web Share API + mailto fallback)
+  À FAIRE (prévu)
+  · Barre de recherche produit dans renderStockView
+  · Réorganisation armoires/étagères dans Réglages → Secteurs (▲▼)
+  · sw.js séparé pour GitHub Pages (5 lignes)
+  · Stock = 0 visible si seuil > 0 (ligne différenciée)
+  · Inventaire théorique vide à remplir
+  · Bon de commande (alertQtyOptimal → quantité à commander)
+  · Verrouillage mode déploiement en production
 
   DETTE TECHNIQUE
   · Polices DM Sans/DM Mono via Google Fonts (réseau au 1er chargement)
   · BarcodeDetector non supporté Firefox et iOS < 17
-
-  BUGFIXES (0.0.3)
-
-  BUGFIXES (0.0.4)
-
-  DEBUG (0.0.5)
-
-  BUGFIX (0.0.6)
-
-  BUGFIX (0.0.7)
-
-  0.0.8 — Améliorations
-
-  0.0.9 — Nettoyage
-
-  0.0.10 — PWA
-
-  0.0.11
-  [OK] Panneau debug silencieux — visible uniquement si bouton DBG activé
-  [OK] Manifest embarqué (data URI, pas de fichier externe)
-  [OK] Icône SVG inline générée
-  [OK] Service Worker cache-first (offline après 1er chargement)
-  [OK] Bannière 'Installer' automatique (beforeinstallprompt)
-  [OK] Mode standalone (plein écran, sans barre Chrome)
-  [OK] Suppression sélecteur lot dans popup quantité (redondant avec FEFO + info lot déjà affichée)
-  [OK] Suppression résidus alertQtyMin dans le modèle secteur
-  [OK] alertQtyMin déplacé du secteur vers le produit
-  [OK] Champ alertQtyMin dans popup création produit inconnu
-  [OK] Bouton ⚙ sur chaque produit → modale édition alertQtyMin + unité
-  [OK] Badge 'Stock bas' dans renderProductRow (cell-low)
-  [OK] Sélection du lot de sortie si plusieurs lots disponibles (OUT/TRANSFER)
-  [OK] FEFO par défaut, choix manuel possible
-  [OK] SyntaxError : apostrophe non échappée dans fsPromptChoose (L'application)
-  [OK] SyntaxError : commentaire /* 7. APP INIT */ tronqué → JS muet
-  [OK] BUG CRITIQUE : appels dbg() dans IIFEs non-CoreUtils → ReferenceError → script muet
-  [OK] Tous les appels cross-IIFE convertis en window.dbg()
-  [OK] Panneau log debug visuel (bouton DBG dans le header)
-  [OK] Instrumentation complète : init, fsInit, fsPromptChoose, renderApp, renderSectorNav/Content, selectSector, switchView, renderSettings, bindSettingsEvents
-  [OK] BUG CRITIQUE renderSectorNav : listener cumulatif → boucle infinie au clic onglet
-  [OK] BUG renderGlobalView / renderStockView : listeners empilés sur sector-content
-  [OK] Centralisation délégation dans renderSectorContent (clone + listener unique)
-  [OK] BUG fsInit : mode dégradé silencieux — modale toujours affichée au démarrage
-  [OK] BUG renderSettings : listeners cumulatifs — container cloné avant rebind
-  [OK] BUG fsPromptChoose mode dégradé : boutons FS API masqués si API absente
-
-  DETTE TECHNIQUE
-  · Polices DM Sans/DM Mono chargées via Google Fonts (nécessite réseau au 1er chargement)
-    → À inliner en base64 pour offline total (sprint final)
-  · BarcodeDetector non supporté Firefox et iOS < 17
-    → ZXing-js à inliner ultérieurement si nécessaire
 
   ======================================================================
 -->
@@ -221,7 +164,11 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   color: var(--accent);
   letter-spacing: .12em;
   text-transform: uppercase;
-  flex-shrink: 0;
+  flex: 1;               /* pousse les actions à droite */
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .header-sector-name {
   flex: 1;
@@ -321,6 +268,70 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   margin: 13px 0 6px;
 }
 .section-title:first-child { margin-top: 0; }
+
+/* Arborescence stock : armoire (niveau 1) et étagère (niveau 2) */
+.loc-armoire {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface2);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin: 10px 0 4px;
+  cursor: pointer;
+  user-select: none;
+}
+.loc-armoire:first-child { margin-top: 4px; }
+.loc-armoire-icon { font-size: 13px; transition: transform .2s; }
+.loc-armoire.collapsed .loc-armoire-icon { transform: rotate(-90deg); }
+.loc-etagere {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text2);
+  padding: 4px 8px 4px 20px;
+  margin: 6px 0 3px;
+  border-left: 2px solid var(--border);
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.loc-content { margin-left: 8px; }
+.loc-content.collapsed { display: none; }
+
+/* ── Drag and drop emplacement ── */
+.entry-draggable {
+  cursor: grab;
+  transition: opacity .15s;
+  -webkit-touch-callout: none;  /* Bloque callout iOS */
+  -webkit-user-select: none;
+  user-select: none;
+}
+.entry-draggable:active { cursor: grabbing; }
+.entry-dragging { opacity: .4; }
+
+.drop-zone { transition: background .15s, border-color .15s; }
+.reorder-drop-before { border-top: 2px solid var(--accent) !important; }
+.reorder-drop-after  { border-bottom: 2px solid var(--accent) !important; }
+.drop-zone.drag-over {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border-color: var(--accent) !important;
+}
+
+/* Étagère repliable */
+.loc-etagere {
+  cursor: pointer;
+  user-select: none;
+}
+.loc-etagere-icon { transition: transform .2s; display: inline-block; }
+.loc-etagere.collapsed .loc-etagere-icon { transform: rotate(-90deg); }
+.loc-sub-content.collapsed { display: none; }
+
+
 
 /* ============================================================
    BOUTONS
@@ -854,8 +865,11 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
 <!-- ═══ HEADER PRINCIPAL ═══ -->
 <div class="app-header">
-  <span class="header-brand">STOCK</span>
-  <span class="header-sector-name" id="header-sector-name"></span>
+  <span class="header-brand" id="header-brand">
+    <img id="header-logo" style="height:22px;width:auto;vertical-align:middle;display:none;margin-right:6px">
+    <span id="header-appname">STOCK</span>
+  </span>
+  <!-- nom secteur supprimé — visible via onglet actif -->
   <div class="header-actions">
     <button class="btn-icon" id="btn-extract" title="Extractions / Rapports">📊</button>
     <button class="btn-icon" id="btn-settings" title="Réglages">⚙️</button>
@@ -961,12 +975,19 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
    =====================================================================
 
    ORDRE D'EXÉCUTION :
-   1. CoreUtils  — fonctions pures exposées sur window
-   2. Store      — état centralisé, init depuis localStorage ou vide
-   3. FSModule   — persistance, démarre fsInit() en fin de script
-   4. SectorModule — navigation, rendu secteurs
-   5. SettingsModule — module réglages
-   6. init()     — point d'entrée unique
+   1. CoreUtils     — fonctions pures exposées sur window
+   2. Store         — état centralisé, init depuis localStorage ou vide
+   3. FSModule      — persistance fichier / localStorage
+   4. UIUtils       — toast, modales, switchView
+   5. SectorModule  — navigation, rendu secteurs, drag and drop
+   6. SettingsModule — réglages, CRUD secteurs/emplacements
+   7. ScanModule    — scan vidéo, parseGS1, lookup BDPM/GUDID
+   8. MovementModule — entrée, sortie, transfert, boîte sécable
+   9. ReportModule  — extractions, export CSV
+  10. InventoryModule — inventaire, purge périmés
+  11. DeployModule  — mode maître/autonome/satellite
+  12. MergeModule   — export/import movements-sync
+  13. AppInit       — point d'entrée, PWA
    ===================================================================== */
 
 'use strict';
@@ -1013,13 +1034,19 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
   /* ── Statut péremption ── */
   /* Retourne 'danger' (périmé), 'warn' (< alertDays), 'ok' (> alertDays) ou 'none' */
-  function expiryStatus(dateStr, alertDays) {
+  /* Retourne :
+     'danger' = périmé (date dépassée)
+     'warn'   = expire avant la fin du mois courant
+     'ok'     = expire après la fin du mois courant
+     'none'   = pas de date */
+  function expiryStatus(dateStr) {
     if (!dateStr) return 'none';
-    var d = new Date(dateStr);
+    var d   = new Date(dateStr);
     var now = new Date();
-    var diffDays = Math.floor((d - now) / 86400000);
-    if (diffDays < 0) return 'danger';
-    if (diffDays <= alertDays) return 'warn';
+    if (d < now) return 'danger';
+    /* Fin du mois courant : dernier jour à 23:59:59 */
+    var endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    if (d <= endOfMonth) return 'warn';
     return 'ok';
   }
 
@@ -1118,16 +1145,22 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
   /* Trouve la fin d'un champ variable GS1 :
      s'arrête au FNC1 (\x1D), au prochain AI connu, ou à maxLen caractères. */
+  /* Trouve la fin d'un champ variable GS1.
+     Protection renforcée : un AI candidat dans les MIN_OFFSET premiers
+     caractères du champ est ignoré (ex: lot "111706A" contient "17" en pos 2).
+     Les numéros de lot/série commencent souvent par des chiffres — on laisse
+     au moins 4 caractères avant de reconnaître un AI. */
   function _findVarEnd(s, startPos, maxLen) {
-    var KNOWN_AI = ['01', '17', '10', '21', '30', '310', '320', '711', '712', '713', '714', '715', '716'];
+    var KNOWN_AI   = ['01', '17', '10', '21', '30', '310', '320'];
+    var MIN_OFFSET = 4;   /* ignorer les AI dans les 4 premiers chars du champ */
     var end = Math.min(startPos + maxLen, s.length);
     for (var i = startPos; i < end; i++) {
-      if (s[i] === '\x1D') return i;   /* FNC1 = séparateur explicite */
-      /* Vérifier si on est sur un AI connu */
+      if (s[i] === '\x1D') return i;   /* FNC1 = séparateur explicite, toujours valide */
+      /* Ne tester les AI qu'après MIN_OFFSET caractères dans le champ */
+      if (i - startPos < MIN_OFFSET) continue;
       for (var k = 0; k < KNOWN_AI.length; k++) {
         var ai = KNOWN_AI[k];
         if (s.slice(i, i + ai.length) === ai) {
-          /* Vérifier que c'est vraisemblablement un AI (suivi de chiffres) */
           var after = s.slice(i + ai.length, i + ai.length + 2);
           if (/^\d/.test(after)) return i;
         }
@@ -1136,20 +1169,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     return end;
   }
 
-  /* Obsolète — remplacé par _findVarEnd dans parseGS1 */
-  function findNextAI(s, startPos) {
-    var KNOWN_AI = ['01', '10', '17', '21', '30', '310', '320'];
-    var pos = startPos;
-    while (pos < s.length) {
-      for (var i = 0; i < KNOWN_AI.length; i++) {
-        if (s.slice(pos, pos + KNOWN_AI[i].length) === KNOWN_AI[i]) {
-          return pos;
-        }
-      }
-      pos++;
-    }
-    return s.length;
-  }
 
   /* Convertit AAMMJJ en YYYY-MM-DD */
   function parseGS1Date(yymmdd) {
@@ -1276,7 +1295,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   'use strict';
 
   /* ── Version courante du schéma JSON ── */
-  var SCHEMA_VERSION = '0.0.36';
+  var SCHEMA_VERSION = '0.0.40';
 
   /* Unités disponibles — déduites des formes BDPM (CIS_bdpm.txt) */
   var STOCK_UNITS = [
@@ -1300,7 +1319,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       return '<option value="' + u.value + '"' + (u.value === selected ? ' selected' : '') + '>' + u.label + '</option>';
     }).join('');
   }
-  window.buildUnitOptions = buildUnitOptions;
+  /* buildUnitOptions — usage interne uniquement */
 
   /* Mappe une forme pharmaceutique BDPM (champ formePharmaceutique) vers une valeur STOCK_UNITS.
      Source : analyse du fichier CIS_bdpm.txt ANSM. */
@@ -1409,6 +1428,9 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       if (s.order === undefined) s.order = i;
       if (!s._updatedAt)   s._updatedAt = 0;
       if (s._deletedAt === undefined) s._deletedAt = null;
+      if (s.partial    === undefined) s.partial    = false;
+    if (data.settings.appName  === undefined) data.settings.appName  = '';
+    if (data.settings.appLogo  === undefined) data.settings.appLogo  = '';
       if (s.alertQtyMin === undefined) s.alertQtyMin = 0;
     });
 
@@ -1416,7 +1438,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     data.products.forEach(function(p) {
       if (!p.unit)      p.unit = 'unité';
       if (!p.category)  p.category = 'drug';
-      if (p.alertQtyMin === undefined) p.alertQtyMin = 0;
+      if (p.alertQtyMin     === undefined) p.alertQtyMin     = 0;
+      if (p.alertQtyOptimal === undefined) p.alertQtyOptimal = 0;
       if (p.pkgQty      === undefined) p.pkgQty      = 0;
     });
 
@@ -1428,6 +1451,9 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       if (s.qty === undefined) s.qty = 0;
       if (!s._updatedAt)   s._updatedAt = 0;
       if (s._deletedAt === undefined) s._deletedAt = null;
+      if (s.partial    === undefined) s.partial    = false;
+    if (data.settings.appName  === undefined) data.settings.appName  = '';
+    if (data.settings.appLogo  === undefined) data.settings.appLogo  = '';
     });
 
     /* Normaliser mouvements */
@@ -1462,6 +1488,32 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     _state.settings._updatedAt = Date.now();
     _state._updatedAt = Date.now();
   }
+
+  /* ── Ordre d'affichage produits par secteur ── */
+  /* Clé : 'sectorId:productId' → position (entier) */
+  function getProductOrder(sectorId, productId) {
+    var map = _state.settings.productOrder || {};
+    var key = sectorId + ':' + productId;
+    return map[key] !== undefined ? map[key] : 9999;
+  }
+  function setProductOrder(sectorId, productId, order) {
+    if (!_state.settings.productOrder) _state.settings.productOrder = {};
+    _state.settings.productOrder[sectorId + ':' + productId] = order;
+    _state._updatedAt = Date.now();
+  }
+  function getProductOrderMap(sectorId) {
+    var map = _state.settings.productOrder || {};
+    var prefix = sectorId + ':';
+    var result = {};
+    Object.keys(map).forEach(function(k) {
+      if (k.indexOf(prefix) === 0) result[k.slice(prefix.length)] = map[k];
+    });
+    return result;
+  }
+
+  window.storeGetProductOrder    = getProductOrder;
+  window.storeSetProductOrder    = setProductOrder;
+  window.storeGetProductOrderMap = getProductOrderMap;
 
   /* ── Accesseurs Secteurs ── */
   function getSectors() {
@@ -1746,6 +1798,11 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   }
 
   /* ── Démarrage ── */
+  /* Réinitialise l'indicateur uniquement si un nouveau handle est créé */
+  function _resetSaveStatus() {
+    /* Ne rien faire ici — le statut sera mis à jour par fsSetStatus après l'ouverture */
+  }
+
   function fsInit() {
     window.dbg('fsInit() démarré — showOpenFilePicker=' + ('showOpenFilePicker' in window), 'info');
     /* Charger le localStorage comme état de base dans tous les cas */
@@ -1867,6 +1924,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   }
 
   function fsCreateNewFile() {
+    _resetSaveStatus();
     var modal = document.getElementById('fs-startup-modal');
     window.showSaveFilePicker({
       types: [{ description: 'Stock JSON', accept: { 'application/json': ['.json'] } }],
@@ -1888,6 +1946,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   }
 
   function fsChooseFile() {
+    _resetSaveStatus();
     var modal = document.getElementById('fs-startup-modal');
     window.showOpenFilePicker({
       types: [{ description: 'Stock JSON', accept: { 'application/json': ['.json'] } }],
@@ -1938,7 +1997,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
     var type     = exportType;
     var settings = storeGetSettings();
-    var alertDays = settings.alertDaysExpiry || 30;
     var now = Date.now();
     var payload;
 
@@ -1973,7 +2031,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       }
       if (type === 'expiry-purge') {
         stock = stock.filter(function(e) {
-          var s = expiryStatus(e.expiry, alertDays);
+          var s = expiryStatus(e.expiry);
           return s === 'danger' || s === 'warn';
         });
       }
@@ -2108,7 +2166,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
             } else {
               if (!p.id) p.id = genId();
               if (p.pkgQty      === undefined) p.pkgQty      = 0;
-              if (p.alertQtyMin === undefined) p.alertQtyMin = 0;
+              if (p.alertQtyMin     === undefined) p.alertQtyMin     = 0;
+      if (p.alertQtyOptimal === undefined) p.alertQtyOptimal = 0;
               storeUpsertProduct(p);
               added++;
             }
@@ -2331,7 +2390,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     switchView('sector');
     renderSectorNav();
     renderSectorContent();
-    updateHeaderSectorName();
   }
 
   function getCurrentSectorId() { return _currentSectorId; }
@@ -2344,17 +2402,15 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     el.textContent = sector ? sector.name : '';
   }
 
-  /* ── Compte périmés dans un secteur ── */
-  /* -- Compte alertes dans un secteur (perimés + stock bas) -- */
+  /* Compte alertes dans un secteur (périmés + stock bas) */
   function countAlertsInSector(sectorId) {
     var stock     = storeGetStockBySector(sectorId);
     var settings  = storeGetSettings();
-    var alertDays = settings.alertDaysExpiry || 30;
     var groups    = groupStockByProduct(stock);
     var count     = 0;
     groups.forEach(function(g) {
       var hasExpiry = g.entries.some(function(e) {
-        return expiryStatus(e.expiry, alertDays) !== 'ok';
+        return expiryStatus(e.expiry) !== 'ok';
       });
       var min   = g.product ? (g.product.alertQtyMin || 0) : 0;
       var isLow = min > 0 && g.totalQty <= min;
@@ -2401,14 +2457,38 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       /* Vue Stock : toggle détail lots */
       var lotsToggle = e.target.closest('[data-toggle-lots]');
       if (lotsToggle) { toggleLotDetail(lotsToggle.dataset.toggleLots, content); return; }
+      /* Toggle armoire */
+      var locToggle = e.target.closest('[data-toggle-loc]');
+      if (locToggle) {
+        var locContent = content.querySelector('#' + locToggle.dataset.toggleLoc);
+        if (locContent) {
+          var collapsed = locContent.classList.toggle('collapsed');
+          locToggle.classList.toggle('collapsed', collapsed);
+        }
+        return;
+      }
+      /* Toggle étagère */
+      var subToggle = e.target.closest('[data-toggle-sub]');
+      if (subToggle && !e.target.closest('[data-drag-entry]')) {
+        var subContent = content.querySelector('#' + subToggle.dataset.toggleSub);
+        if (subContent) {
+          var subCollapsed = subContent.classList.toggle('collapsed');
+          subToggle.classList.toggle('collapsed', subCollapsed);
+        }
+        return;
+      }
       /* Vue Stock : éditer alertQtyMin du produit */
       var editAlert = e.target.closest('[data-edit-product-alert]');
       if (editAlert) { openProductAlertModal(editAlert.dataset.editProductAlert); return; }
       /* Réassigner emplacement d'une entrée de stock */
       var splitBtn = e.target.closest('[data-split-entry]');
       if (splitBtn) { openSplitModal(splitBtn.dataset.splitEntry, sector.id); return; }
-      var editLoc = e.target.closest('[data-edit-location]');
-      if (editLoc) { openLocationModal(editLoc.dataset.editLocation, sector.id); return; }
+      var moveBtn = e.target.closest('[data-move-entry]');
+      if (moveBtn) {
+        /* Ouvrir popup déplacement — l'utilisateur choisit l'emplacement cible */
+        openMoveFromButton(moveBtn.dataset.moveEntry, sector.id);
+        return;
+      }
     });
 
     /* Vérifier et afficher alertes périmés à l'ouverture */
@@ -2418,15 +2498,14 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       renderGlobalView(content);
     } else {
       renderStockView(content, sector);
+      if (window._initDragDrop) window._initDragDrop(content, sector);
     }
   }
 
-  /* ── Vue Global : consolidation tous secteurs ── */
-  /* -- Vue Global -- */
+  /* Vue Global : consolidation tous secteurs */
   function renderGlobalView(container) {
     var sectors   = storeGetSectors().filter(function(s) { return s.id !== 'global'; });
     var settings  = storeGetSettings();
-    var alertDays = settings.alertDaysExpiry || 30;
 
     if (sectors.length === 0) {
       container.innerHTML = '<div class="module-content"><div class="empty-state">'
@@ -2440,12 +2519,12 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
     var sectorData = sectors.map(function(sector) {
       var stock  = storeGetStockBySector(sector.id);
-      var groups = groupStockByProduct(stock);
+      var groups = groupStockByProduct(stock, sector);
       var expired = 0, expiringSoon = 0, lowStock = 0;
       groups.forEach(function(g) {
         var w = 'ok';
         g.entries.forEach(function(e) {
-          var s = expiryStatus(e.expiry, alertDays);
+          var s = expiryStatus(e.expiry);
           if (s === 'danger') w = 'danger';
           else if (s === 'warn' && w !== 'danger') w = 'warn';
         });
@@ -2457,7 +2536,11 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       return {
         sector:      sector,
         groups:      groups,
-        totalUnits:  stock.reduce(function(s, e) { return s + (e.qty || 0); }, 0),
+        totalUnits:  (function() {
+          var pkgQ = 0;
+          var grps = groupStockByProduct(stock, sector);
+          return grps.reduce(function(s, g) { return s + (g.totalUnitsReal || g.totalQty); }, 0);
+        })(),
         expired:     expired,
         expiringSoon: expiringSoon,
         lowStock:    lowStock,
@@ -2512,12 +2595,10 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     return Object.keys(ids).length;
   }
 
-  /* ── Vue secteur : liste stock ── */
-  /* -- Vue secteur : liste stock -- */
+  /* Vue secteur : liste stock */
   function renderStockView(container, sector) {
     var stock     = storeGetStockBySector(sector.id);
     var settings  = storeGetSettings();
-    var alertDays = settings.alertDaysExpiry || 30;
 
     if (stock.length === 0) {
       container.innerHTML = '<div class="module-content"><div class="empty-state">'
@@ -2528,28 +2609,21 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       return;
     }
 
-    var groups = groupStockByProduct(stock);
+    var groups = groupStockByProduct(stock, sector);
 
-    /* Tri : perimés > bientot > stock bas > alpha */
+    /* Tri : ordre manuel (défini par drag) puis alpha si non défini */
+    groups.forEach(function(g) {
+      g._order = g.product ? storeGetProductOrder(sector.id, g.product.id) : 9999;
+    });
     groups.sort(function(a, b) {
-      function score(g) {
-        var w = 'ok';
-        g.entries.forEach(function(e) {
-          var s = expiryStatus(e.expiry, alertDays);
-          if (s === 'danger') w = 'danger';
-          else if (s === 'warn' && w !== 'danger') w = 'warn';
-        });
-        var low = g.product && g.product.alertQtyMin > 0 && g.totalQty <= g.product.alertQtyMin;
-        return w === 'danger' ? 3 : w === 'warn' ? 2 : low ? 1 : 0;
-      }
-      var diff = score(b) - score(a);
-      if (diff !== 0) return diff;
+      if (a._order !== b._order) return a._order - b._order;
       return (a.product ? a.product.name : '').localeCompare(b.product ? b.product.name : '');
     });
 
-    var totalUnits = stock.reduce(function(s, e) { return s + (e.qty || 0); }, 0);
+    /* Calcul totalUnits en unités réelles (boîtes × pkgQty + partielles) */
+    var totalUnits = groups.reduce(function(s, g) { return s + (g.totalUnitsReal || g.totalQty); }, 0);
     var alertCount = groups.filter(function(g) {
-      var exp = g.entries.some(function(e) { return expiryStatus(e.expiry, alertDays) !== 'ok'; });
+      var exp = g.entries.some(function(e) { return expiryStatus(e.expiry) !== 'ok'; });
       var low = g.product && g.product.alertQtyMin > 0 && g.totalQty <= g.product.alertQtyMin;
       return exp || low;
     }).length;
@@ -2564,8 +2638,25 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     if (locations.length > 0) {
       locations.forEach(function(loc) {
         var sublocs = loc.sublocs || [];
+        var locId   = 'loc-' + loc.id;
+
+        /* Compter les produits dans cette armoire */
+        var locCount = groups.filter(function(g) {
+          return g.entries.some(function(e) {
+            var l = e.location || {};
+            return l.locId === loc.id;
+          });
+        }).length;
+        /* En-tête armoire — affichée même vide (zone de drop) */
+        html += '<div class="loc-armoire" data-toggle-loc="' + escH(locId) + '">';
+        html += '<span class="loc-armoire-icon">▼</span>';
+        html += '<span>📦 ' + escH(loc.name) + '</span>';
+        html += '<span style="margin-left:auto;font-size:9px;color:var(--text3)">' + (locCount || 'vide') + (locCount ? ' réf.' : '') + '</span>';
+        html += '</div>';
+        html += '<div class="loc-content" id="' + escH(locId) + '">';
+
         if (sublocs.length > 0) {
-          /* 2 niveaux : afficher chaque sous-emplacement */
+          /* Niveau 2 : étagères */
           sublocs.forEach(function(sub) {
             var subGroups = groups.filter(function(g) {
               return g.entries.some(function(e) {
@@ -2573,11 +2664,17 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
                 return l.locId === loc.id && l.sublocId === sub.id;
               });
             });
-            if (subGroups.length === 0) return;
-            html += '<div class="section-title">' + escH(loc.name) + ' › ' + escH(sub.name) + '</div>';
-            subGroups.forEach(function(g) { html += renderProductRow(g, alertDays, sector.mode, sector); });
+            /* Étagère affichée même vide — zone de drop */
+            var subId = 'sub-' + loc.id + '-' + sub.id;
+            html += '<div class="loc-etagere drop-zone" data-toggle-sub="' + escH(subId) + '"'
+              + ' data-drop-loc="' + escH(loc.id) + '/' + escH(sub.id) + '">'
+              + '<span class="loc-etagere-icon">▼</span> ' + escH(sub.name)
+              + ' <span style="font-size:9px;color:var(--text3);margin-left:6px">' + (subGroups.length || 'vide') + (subGroups.length ? ' réf.' : '') + '</span></div>';
+            html += '<div class="loc-sub-content" id="' + escH(subId) + '">';
+            subGroups.forEach(function(g) { html += renderProductRow(g, sector.mode, sector); });
+            html += '</div>';
           });
-          /* Produits dans loc sans sous-emplacement */
+          /* Produits dans l'armoire sans étagère */
           var sublessGroups = groups.filter(function(g) {
             return g.entries.some(function(e) {
               var l = e.location || {};
@@ -2585,28 +2682,36 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
             });
           });
           if (sublessGroups.length > 0) {
-            html += '<div class="section-title">' + escH(loc.name) + '</div>';
-            sublessGroups.forEach(function(g) { html += renderProductRow(g, alertDays, sector.mode, sector); });
+            var sublessId = 'sub-' + loc.id + '-none';
+            html += '<div class="loc-etagere drop-zone" data-toggle-sub="' + escH(sublessId) + '"'
+              + ' data-drop-loc="' + escH(loc.id) + '/">'
+              + '<span class="loc-etagere-icon">▼</span> Sans étagère</div>';
+            html += '<div class="loc-sub-content" id="' + escH(sublessId) + '">';
+            sublessGroups.forEach(function(g) { html += renderProductRow(g, sector.mode, sector); });
+            html += '</div>';
           }
         } else {
-          /* 1 niveau */
+          /* Niveau 1 uniquement */
           var locGroups = groups.filter(function(g) {
             return g.entries.some(function(e) {
               var l = e.location || {};
-              return l.locId === loc.id || e.location === loc.id;
+              return l.locId === loc.id;
             });
           });
-          if (locGroups.length === 0) return;
-          html += '<div class="section-title">' + escH(loc.name) + '</div>';
-          locGroups.forEach(function(g) { html += renderProductRow(g, alertDays, sector.mode, sector); });
+          locGroups.forEach(function(g) { html += renderProductRow(g, sector.mode, sector); });
         }
+        html += '</div>'; /* /loc-content */
       });
+
+      /* Produits sans emplacement */
       var unlocated = groups.filter(function(g) {
-        return g.entries.every(function(e) { return !e.location || (!e.location.locId && e.location !== ''); });
+        return g.entries.every(function(e) { return !e.location || !e.location.locId; });
       });
       if (unlocated.length > 0) {
-        html += '<div class="section-title">Sans emplacement</div>';
-        unlocated.forEach(function(g) { html += renderProductRow(g, alertDays, sector.mode, sector); });
+        html += '<div class="loc-armoire"><span>📦 Sans emplacement</span></div>';
+        html += '<div class="loc-content">';
+        unlocated.forEach(function(g) { html += renderProductRow(g, sector.mode, sector); });
+        html += '</div>';
       }
     } else {
       var drugs   = groups.filter(function(g) { return g.product && g.product.category === 'drug'; });
@@ -2614,15 +2719,15 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       var other   = groups.filter(function(g) { return !g.product || (g.product.category !== 'drug' && g.product.category !== 'device'); });
       if (drugs.length > 0) {
         html += '<div class="section-title">Medicaments</div>';
-        drugs.forEach(function(g) { html += renderProductRow(g, alertDays, sector.mode, sector); });
+        drugs.forEach(function(g) { html += renderProductRow(g, sector.mode, sector); });
       }
       if (devices.length > 0) {
         html += '<div class="section-title">Dispositifs medicaux</div>';
-        devices.forEach(function(g) { html += renderProductRow(g, alertDays, sector.mode, sector); });
+        devices.forEach(function(g) { html += renderProductRow(g, sector.mode, sector); });
       }
       if (other.length > 0) {
         html += '<div class="section-title">Autres</div>';
-        other.forEach(function(g) { html += renderProductRow(g, alertDays, sector.mode, sector); });
+        other.forEach(function(g) { html += renderProductRow(g, sector.mode, sector); });
       }
     }
 
@@ -2631,7 +2736,10 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   }
 
   /* Regroupe les entrées de stock par productId */
-  function groupStockByProduct(stockList) {
+  /* Groupe les entrées de stock par produit.
+     totalQty = nombre de BOÎTES (mode box) ou d'UNITÉS (mode unit).
+     totalUnitsReal = toujours en unités réelles (boîtes × pkgQty + partielles). */
+  function groupStockByProduct(stockList, sector) {
     var map = {};
     stockList.forEach(function(entry) {
       if (!map[entry.productId]) {
@@ -2639,16 +2747,24 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       }
       map[entry.productId].entries.push(entry);
     });
+    var isBox  = sector && sector.mode === 'box';
     return Object.values(map).map(function(g) {
-      g.product = storeGetProductById(g.productId);
+      g.product  = storeGetProductById(g.productId);
+      var pkgQty = g.product ? (g.product.pkgQty || 0) : 0;
+      /* totalQty : boîtes en mode box, unités en mode unit */
       g.totalQty = g.entries.reduce(function(sum, e) { return sum + (e.qty || 0); }, 0);
+      /* totalUnitsReal : toujours en unités pour les calculs d'alerte */
+      g.totalUnitsReal = isBox
+        ? g.entries.reduce(function(sum, e) {
+            return sum + (e.partial ? (e.qty || 0) : (e.qty || 0) * (pkgQty || 1));
+          }, 0)
+        : g.totalQty;
       return g;
     });
   }
 
-  /* Rendu d'une ligne produit (avec ou sans bouton lots) */
   /* Rendu d'une ligne produit */
-  function renderProductRow(group, alertDays, mode, sector) {
+  function renderProductRow(group, mode, sector) {
     var product = group.product;
     var name    = product ? product.name : '(Produit inconnu)';
     var unit    = product ? (product.unit || 'unite') : 'unite';
@@ -2656,13 +2772,14 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     /* Statut peremption : pire lot */
     var worstStatus = 'ok';
     group.entries.forEach(function(e) {
-      var s = expiryStatus(e.expiry, alertDays);
+      var s = expiryStatus(e.expiry);
       if (s === 'danger') worstStatus = 'danger';
       else if (s === 'warn' && worstStatus !== 'danger') worstStatus = 'warn';
     });
 
-    var alertQtyMin = product ? (product.alertQtyMin || 0) : 0;
-    var pkgQtyRow   = product ? (product.pkgQty      || 0) : 0;
+    var alertQtyMin     = product ? (product.alertQtyMin     || 0) : 0;
+    var alertQtyOptimal = product ? (product.alertQtyOptimal || 0) : 0;
+    var pkgQtyRow       = product ? (product.pkgQty          || 0) : 0;
     var isLow = alertQtyMin > 0 && group.totalQty <= alertQtyMin;
     if (isLow && worstStatus === 'ok') worstStatus = 'low';
 
@@ -2679,8 +2796,18 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     });
 
     var hasMultiLots = sorted.length > 1;
-    var html = '<div class="settings-card ' + rowClass + '" style="margin-bottom:6px">';
+    var productId = group.productId || (group.product ? group.product.id : '');
+    var html = '<div class="settings-card ' + rowClass + '"'
+      + ' data-reorder-product="' + escH(productId) + '"'
+      + ' style="margin-bottom:6px">';
     html += '<div style="display:flex;align-items:center;gap:8px">';
+    /* Poignée de drag dédiée (PC + mobile via pointerdown) */
+    html += '<span class="drag-handle" draggable="true"'
+      + ' data-drag-reorder="' + escH(productId) + '"'
+      + ' title="Réordonner"'
+      + ' style="color:var(--text2);font-size:18px;cursor:grab;flex-shrink:0;'
+      + 'padding:8px 10px;margin:-6px -4px -6px -8px;touch-action:none;'
+      + 'display:flex;align-items:center;justify-content:center">&#x2195;</span>';
     html += '<div style="flex:1;min-width:0">';
     html += '<div style="display:flex;align-items:center;gap:6px">';
     html += '<span style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escH(name) + '</span>';
@@ -2690,12 +2817,15 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     html += '</div>';
     html += '<div style="font-size:10px;color:var(--text2);margin-top:2px">';
     if (mode === 'box' && pkgQtyRow > 0) {
-      html += group.totalQty + ' boîte' + (group.totalQty > 1 ? 's' : '')
-        + ' <span style="color:var(--text3)">(= ' + (group.totalQty * pkgQtyRow) + ' ' + escH(unit) + ')</span>';
+      var totalU = group.totalQty * pkgQtyRow;
+      html += group.totalQty + ' ' + pluralUnit('boite', group.totalQty)
+        + ' de ' + pkgQtyRow + ' ' + escH(pluralUnit(unit, pkgQtyRow))
+        + ' <span style="color:var(--text3);font-size:9px">(total : ' + totalU + ' ' + escH(pluralUnit(unit, totalU)) + ')</span>';
+    } else if (mode === 'box') {
+      html += group.totalQty + ' ' + pluralUnit('boite', group.totalQty);
     } else {
-      html += group.totalQty + ' ' + escH(unit);
+      html += group.totalQty + ' ' + escH(pluralUnit(unit, group.totalQty));
     }
-    if (alertQtyMin > 0) html += ' <span style="color:var(--text3)">/ min ' + alertQtyMin + '</span>';
     if (worstStatus === 'danger') html += ' &nbsp;<span class="badge badge-danger">Perime</span>';
     else if (worstStatus === 'warn') html += ' &nbsp;<span class="badge badge-warn">Expire bientot</span>';
     else if (worstStatus === 'low')  html += ' &nbsp;<span class="badge badge-warn">Stock bas</span>';
@@ -2704,19 +2834,20 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     /* Colonne droite */
     if (!hasMultiLots) {
       var e0 = sorted[0];
-      var ec0 = e0.expiry ? expiryStatus(e0.expiry, alertDays) : 'ok';
+      var ec0 = e0.expiry ? expiryStatus(e0.expiry) : 'ok';
       var ecol0 = ec0 === 'danger' ? 'var(--danger)' : ec0 === 'warn' ? 'var(--warn)' : 'var(--text3)';
       /* Colonne droite : lot + péremption toujours visibles */
       html += '<div style="text-align:right;font-size:10px;font-family:monospace;flex-shrink:0">';
-      if (e0.lot) html += '<span style="color:var(--text3)">' + escH(e0.lot) + '</span><br>';
+      var partBadge0 = e0.partial ? ' <span style="font-size:8px;background:var(--warn);color:#000;padding:1px 4px;border-radius:3px;margin-left:4px">entamée</span>' : '';
+      if (e0.lot) html += '<span style="color:var(--text3)">' + escH(e0.lot) + '</span>' + partBadge0 + '<br>';
       if (e0.expiry) html += '<span style="color:' + ecol0 + ';font-weight:600">' + displayDate(e0.expiry) + '</span><br>';
       html += '<button class="btn btn-ghost" style="padding:1px 4px;font-size:9px;margin-top:2px" '
-        + 'data-edit-location="' + escH(e0.id) + '" title="Changer emplacement">✎ Empl.</button>';
+        + 'data-move-entry="' + escH(e0.id) + '" title="Déplacer">⇆ Déplacer</button>';
       html += '</div>';
     } else {
       /* Multi-lots : bouton toggle + résumé péremptions inline */
       var nextExp = sorted.find(function(e) { return e.expiry; });
-      var ec1 = nextExp ? expiryStatus(nextExp.expiry, alertDays) : 'ok';
+      var ec1 = nextExp ? expiryStatus(nextExp.expiry) : 'ok';
       var ecol1 = ec1 === 'danger' ? 'var(--danger)' : ec1 === 'warn' ? 'var(--warn)' : 'var(--text3)';
       html += '<div style="text-align:right;flex-shrink:0">';
       if (nextExp) html += '<div style="font-size:10px;font-family:monospace;color:' + ecol1 + ';margin-bottom:2px">' + displayDate(nextExp.expiry) + '</div>';
@@ -2728,9 +2859,12 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     /* Zone détail lots FEFO */
     html += '<div id="lots-' + escH(group.productId) + '" style="display:none;margin-top:8px;padding-top:6px;border-top:1px solid var(--border)">';
     sorted.forEach(function(e, i) {
-      var es = expiryStatus(e.expiry, alertDays);
+      var es = expiryStatus(e.expiry);
       var ecol = es === 'danger' ? 'var(--danger)' : es === 'warn' ? 'var(--warn)' : 'var(--text3)';
-      html += '<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:11px' + (i > 0 ? ';border-top:1px solid var(--border)' : '') + '">';
+      html += '<div class="entry-draggable" draggable="true"'
+        + ' data-drag-entry="' + escH(e.id) + '"'
+        + ' style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:11px' + (i > 0 ? ';border-top:1px solid var(--border)' : '') + '">'
+;
       /* Résoudre le libellé d'emplacement */
       var locLabel = '';
       if (e.location && e.location.locId) {
@@ -2738,8 +2872,9 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         var subObj = locObj && e.location.sublocId ? (locObj.sublocs || []).find(function(s) { return s.id === e.location.sublocId; }) : null;
         locLabel = locObj ? (subObj ? locObj.name + ' › ' + subObj.name : locObj.name) : '';
       }
-      html += '<span style="font-family:monospace;font-size:10px;color:var(--text2);flex:1">' + escH(e.lot || '-') + '</span>';
-      html += '<span style="font-weight:600">' + (e.qty || 0) + ' ' + escH(unit) + '</span>';
+      var partialBadge = e.partial ? ' <span style="font-size:8px;background:var(--warn);color:#000;padding:1px 4px;border-radius:3px">entamée</span>' : '';
+      html += '<span style="font-family:monospace;font-size:10px;color:var(--text2);flex:1">' + escH(e.lot || '-') + partialBadge + '</span>';
+      html += '<span style="font-weight:600">' + (e.qty || 0) + ' ' + escH(pluralUnit(unit, e.qty || 0)) + '</span>';
       html += '<span style="color:' + ecol + ';font-size:10px">' + (e.expiry ? displayDate(e.expiry) : '-') + '</span>';
       if (locLabel) html += '<span style="font-size:9px;color:var(--text3)">' + escH(locLabel) + '</span>';
       if (e.qty > 1) {
@@ -2747,7 +2882,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
           + 'data-split-entry="' + escH(e.id) + '" title="Répartir">⇆</button>';
       }
       html += '<button class="btn btn-ghost" style="padding:1px 4px;font-size:9px;flex-shrink:0" '
-        + 'data-edit-location="' + escH(e.id) + '" title="Changer emplacement">✎</button>';
+        + 'data-move-entry="' + escH(e.id) + '" title="Déplacer">⇆</button>';
       html += '</div>';
     });
     html += '</div>';
@@ -2769,30 +2904,34 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     var bodyHtml =
       '<div style="font-size:13px;font-weight:600;margin-bottom:12px">' + escH(product.name) + '</div>'
       + '<div class="form-group">'
-      + '<label>Alerte stock bas — quantité minimum</label>'
-      + '<input type="number" id="modal-product-alert-qty" inputmode="numeric" value="' + (product.alertQtyMin || 0) + '" min="0">'
-      + '<div class="form-hint">Alerte si la quantité tombe à ce seuil ou en dessous. 0 = désactivé.</div>'
+      + '<label>Seuil bas (alerte)</label>'
+      + '<input type="number" id="modal-product-alert-min" inputmode="numeric" value="' + (product.alertQtyMin || 0) + '" min="0">'
+      + '<div class="form-hint">Badge rouge si stock ≤ seuil. 0 = désactivé.</div>'
       + '</div>'
-      /* unité non affichée ici — déterminée par l'API et le mode du secteur */
+      + '<div class="form-group">'
+      + '<label>Seuil optimal (commande)</label>'
+      + '<input type="number" id="modal-product-alert-opt" inputmode="numeric" value="' + (product.alertQtyOptimal || 0) + '" min="0">'
+      + '<div class="form-hint">Stock cible lors de la génération du bon de commande. 0 = non défini.</div>'
+      + '</div>';
 
     var footerHtml =
       '<button class="btn btn-secondary" data-close-modal="modal-product-alert">Annuler</button>'
       + '<button class="btn btn-primary" id="btn-save-product-alert">Enregistrer</button>';
 
-    var modal = createModal('modal-product-alert', '⚙ Alerte stock', bodyHtml, footerHtml, 'sm');
+    var modal = createModal('modal-product-alert', '⚙ Seuils stock', bodyHtml, footerHtml, 'sm');
     if (!modal) return;
 
     modal.addEventListener('click', function(e) {
       if (e.target.id !== 'btn-save-product-alert') return;
-      var qtyInput  = document.getElementById('modal-product-alert-qty');
-      product.alertQtyMin = qtyInput  ? Math.max(0, parseInt(qtyInput.value, 10)  || 0) : product.alertQtyMin;
-      /* unit non modifiable depuis ce panneau */
-      product._updatedAt  = Date.now();
+      var minInput = document.getElementById('modal-product-alert-min');
+      var optInput = document.getElementById('modal-product-alert-opt');
+      product.alertQtyMin     = minInput ? Math.max(0, parseInt(minInput.value, 10) || 0) : product.alertQtyMin;
+      product.alertQtyOptimal = optInput ? Math.max(0, parseInt(optInput.value, 10) || 0) : (product.alertQtyOptimal || 0);
+      product._updatedAt = Date.now();
       storeUpsertProduct(product);
       fsScheduleSave();
       closeModal('modal-product-alert');
       renderSectorContent();
-      window.dbg('Product alert updated: ' + product.name + ' alertQtyMin=' + product.alertQtyMin, 'ok');
     });
   }
 
@@ -2842,6 +2981,91 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   window.getCurrentSectorId  = getCurrentSectorId;
   window.renderSectorContent  = renderSectorContent;
   /* ── Modale réassignation emplacement d'une entrée de stock ── */
+
+  /* Déplacement via bouton — select destination + quantité (tout ou partiel) */
+  function openMoveFromButton(entryId, sectorId) {
+    var sector = storeGetSectorById(sectorId);
+    if (!sector) return;
+    var entry = storeGetStockBySector(sectorId).find(function(e) { return e.id === entryId; });
+    if (!entry) return;
+    var locs = sector.locations || [];
+    if (locs.length === 0) {
+      showToast('Aucun emplacement défini dans ce secteur', 'warn'); return;
+    }
+    var srcKey = entry.location && entry.location.locId
+      ? entry.location.locId + '/' + (entry.location.sublocId || '') : '';
+    var opts = '<option value="">— Choisir —</option>';
+    locs.forEach(function(loc) {
+      var subs = loc.sublocs || [];
+      if (subs.length > 0) {
+        subs.forEach(function(sub) {
+          var val = loc.id + '/' + sub.id;
+          if (val !== srcKey)
+            opts += '<option value="' + escH(val) + '">' + escH(loc.name) + ' › ' + escH(sub.name) + '</option>';
+        });
+      }
+      var locVal = loc.id + '/';
+      if (locVal !== srcKey)
+        opts += '<option value="' + escH(locVal) + '">' + escH(loc.name) + '</option>';
+    });
+
+    var prod = storeGetProductById(entry.productId);
+    var unit = prod ? (prod.unit || 'u') : 'u';
+    var prodName = prod ? prod.name : '(inconnu)';
+    var bodyHtml =
+      '<div style="font-size:12px;font-weight:600;margin-bottom:10px">' + escH(prodName + (entry.lot ? ' — Lot ' + entry.lot : '')) + '</div>'
+      + '<div class="form-group"><label>Vers</label><select id="mvb-dest">' + opts + '</select></div>'
+      + '<div class="form-group"><label>Quantité</label>'
+      + '<input type="number" id="mvb-qty" inputmode="numeric" value="' + entry.qty + '" min="1" max="' + entry.qty + '"'
+      + ' style="text-align:center;font-size:18px;font-weight:700">'
+      + '<div class="form-hint">Max : ' + entry.qty + ' ' + escH(pluralUnit(unit, entry.qty)) + '</div></div>';
+
+    var footerHtml =
+      '<button class="btn btn-secondary" data-close-modal="modal-mvb">Annuler</button>'
+      + '<button class="btn btn-primary" id="btn-mvb-confirm">Déplacer</button>';
+
+    var modal = createModal('modal-mvb', '⇆ Déplacer', bodyHtml, footerHtml, 'sm');
+    if (!modal) return;
+    setTimeout(function() { var i = document.getElementById('mvb-qty'); if (i) { i.focus(); i.select(); } }, 60);
+
+    modal.addEventListener('click', function(e) {
+      if (e.target.id !== 'btn-mvb-confirm') return;
+      var destSel = document.getElementById('mvb-dest');
+      var qtyInp  = document.getElementById('mvb-qty');
+      var destRaw = destSel ? destSel.value : '';
+      var moveQty = qtyInp ? Math.max(1, Math.min(parseInt(qtyInp.value, 10) || 1, entry.qty)) : entry.qty;
+      if (!destRaw) { showToast('Sélectionnez un emplacement', 'warn'); return; }
+      var destParts = destRaw.split('/');
+      var destLoc   = destParts[0] ? { locId: destParts[0], sublocId: destParts[1] || '' } : '';
+      var moveAll   = moveQty >= entry.qty;
+      closeModal('modal-mvb');
+      if (moveAll) {
+        var ex = _findStockEntry(sectorId, entry.productId, entry.lot, entry.expiry, destLoc);
+        if (ex && ex.id !== entry.id) {
+          ex.qty += entry.qty; ex._updatedAt = Date.now();
+          storeUpsertStockEntry(ex); storeDeleteStockEntry(entry.id);
+        } else {
+          entry.location = destLoc; entry._updatedAt = Date.now();
+          storeUpsertStockEntry(entry);
+        }
+      } else {
+        var ex2 = _findStockEntry(sectorId, entry.productId, entry.lot, entry.expiry, destLoc);
+        if (ex2 && ex2.id !== entry.id) {
+          ex2.qty += moveQty; ex2._updatedAt = Date.now(); storeUpsertStockEntry(ex2);
+        } else {
+          storeUpsertStockEntry({ id: genId(), sectorId: sectorId, productId: entry.productId,
+            lot: entry.lot, expiry: entry.expiry, qty: moveQty, partial: entry.partial || false,
+            location: destLoc, _updatedAt: Date.now(), _deletedAt: null });
+        }
+        entry.qty -= moveQty; entry._updatedAt = Date.now();
+        if (entry.qty <= 0) storeDeleteStockEntry(entry.id);
+        else storeUpsertStockEntry(entry);
+      }
+      fsScheduleSave(); renderSectorContent();
+      showToast('Déplacement effectué', 'success');
+    });
+  }
+
   function openLocationModal(entryId, sectorId) {
     var sector = storeGetSectorById(sectorId);
     if (!sector) return;
@@ -3005,6 +3229,340 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     });
   }
 
+
+  /* ── Drag and drop emplacement ──
+     Pointer Events API — fonctionne PC et mobile, bloque menu natif Android */
+  function _initDragDrop(container, sector) {
+    var sectorId  = sector.id;
+    var _drag     = null; /* { entryId, startX, startY, moved, ghost, pointerId, el } */
+
+    /* Bloquer menu contextuel natif */
+    container.addEventListener('contextmenu', function(e) {
+      if (e.target.closest('[data-drag-entry]')) e.preventDefault();
+    });
+
+    /* ── Pointer Events (PC + Mobile) ── */
+    container.addEventListener('pointerdown', function(e) {
+      var el = e.target.closest('[data-drag-entry]');
+      if (!el) return;
+      if (e.button && e.button !== 0) return; /* clic droit PC ignoré */
+      e.preventDefault();
+      try { el.setPointerCapture(e.pointerId); } catch(ex) {}
+      _drag = {
+        entryId:   el.dataset.dragEntry,
+        startX:    e.clientX,
+        startY:    e.clientY,
+        moved:     false,
+        ghost:     null,
+        pointerId: e.pointerId,
+        el:        el
+      };
+    });
+
+    container.addEventListener('pointermove', function(e) {
+      if (!_drag || e.pointerId !== _drag.pointerId) return;
+      var dx = e.clientX - _drag.startX;
+      var dy = e.clientY - _drag.startY;
+      if (!_drag.moved && Math.sqrt(dx*dx + dy*dy) < 8) return;
+      _drag.moved = true;
+      e.preventDefault();
+
+      /* Indicateur visuel réordonnement */
+      if (_drag.reorderProductId) {
+        container.querySelectorAll('.reorder-drop-before,.reorder-drop-after')
+          .forEach(function(el) { el.classList.remove('reorder-drop-before','reorder-drop-after'); });
+        var under = document.elementFromPoint(e.clientX, e.clientY);
+        var targetCard = under && under.closest('[data-reorder-product]');
+        if (targetCard && targetCard.dataset.reorderProduct !== _drag.reorderProductId) {
+          var rect = targetCard.getBoundingClientRect();
+          targetCard.classList.add(e.clientY < rect.top + rect.height / 2
+            ? 'reorder-drop-before' : 'reorder-drop-after');
+        }
+        if (!_drag.ghost) {
+        var orig = container.querySelector('[data-drag-entry="' + _drag.entryId + '"]');
+        var ghost = document.createElement('div');
+        ghost.style.cssText = 'position:fixed;z-index:99990;opacity:.75;pointer-events:none;'
+          + 'background:var(--surface2);border:1px solid var(--accent);border-radius:6px;'
+          + 'padding:4px 10px;font-size:11px;color:var(--text);white-space:nowrap;';
+        ghost.textContent = orig ? orig.textContent.trim().slice(0,30) : '⊕';
+        document.body.appendChild(ghost);
+        _drag.ghost = ghost;
+        if (orig) orig.classList.add('entry-dragging');
+      }
+      _drag.ghost.style.left = (e.clientX + 12) + 'px';
+      _drag.ghost.style.top  = (e.clientY - 20) + 'px';
+        } /* fin if reorderProductId */
+
+      /* Highlight drop-zone sous le pointeur */
+      if (!_drag.reorderProductId) {
+      container.querySelectorAll('.drag-over').forEach(function(z) { z.classList.remove('drag-over'); });
+      var under = document.elementFromPoint(e.clientX, e.clientY);
+      var zone = under && under.closest('[data-drop-loc]');
+      if (zone) zone.classList.add('drag-over');
+      } /* fin if !reorderProductId */
+    });
+
+    container.addEventListener('pointerup', function(e) {
+      if (!_drag || e.pointerId !== _drag.pointerId) return;
+      var wasMoved = _drag.moved;
+      var reorderProductId = _drag.reorderProductId;
+      var entryId = _drag.entryId;
+      _cleanup();
+      if (!wasMoved) { _drag = null; return; }
+      var under = document.elementFromPoint(e.clientX, e.clientY);
+      if (reorderProductId) {
+        var targetCard = under && under.closest('[data-reorder-product]');
+        if (targetCard && targetCard.dataset.reorderProduct !== reorderProductId) {
+          _applyReorder(reorderProductId, targetCard.dataset.reorderProduct, targetCard, sector);
+        }
+        container.querySelectorAll('.reorder-drop-before,.reorder-drop-after')
+          .forEach(function(el) { el.classList.remove('reorder-drop-before','reorder-drop-after'); });
+      } else {
+        var zone = under && under.closest('[data-drop-loc]');
+        if (zone) openMoveModal(entryId, zone.dataset.dropLoc, sectorId);
+      }
+      _drag = null;
+    });
+
+    container.addEventListener('pointercancel', function(e) {
+      if (!_drag || e.pointerId !== _drag.pointerId) return;
+      _cleanup();
+      _drag = null;
+    });
+
+    /* ── PC : drag events natifs ── */
+    container.addEventListener('dragstart', function(e) {
+      /* Drag d'une entrée de lot (changement emplacement) */
+      var el = e.target.closest('[data-drag-entry]');
+      if (el) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', el.dataset.dragEntry);
+        el.classList.add('entry-dragging');
+        return;
+      }
+      /* Drag via poignée (réordonnement) */
+      var handle = e.target.closest('[data-drag-reorder]');
+      if (handle) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('reorder-product', handle.dataset.dragReorder);
+        var card = handle.closest('[data-reorder-product]');
+        if (card) card.style.opacity = '.4';
+      }
+    });
+    container.addEventListener('dragend', function(e) {
+      var el = e.target.closest('[data-drag-entry]');
+      if (el) el.classList.remove('entry-dragging');
+      var cardEnd = e.target.closest('[data-reorder-product]')
+        || (e.target.closest('[data-drag-reorder]') && e.target.closest('[data-drag-reorder]').closest('[data-reorder-product]'));
+      if (cardEnd) cardEnd.style.opacity = '';
+      container.querySelectorAll('.reorder-drop-before,.reorder-drop-after')
+        .forEach(function(el2) { el2.classList.remove('reorder-drop-before','reorder-drop-after'); });
+    });
+    container.addEventListener('dragover', function(e) {
+      var zone = e.target.closest('[data-drop-loc]');
+      if (zone) {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+      }
+    });
+    container.addEventListener('dragleave', function(e) {
+      var zone = e.target.closest('[data-drop-loc]');
+      if (zone) zone.classList.remove('drag-over');
+    });
+    container.addEventListener('drop', function(e) {
+      /* Drop sur emplacement (armoire/étagère) */
+      var zone = e.target.closest('[data-drop-loc]');
+      if (zone) {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        var entryId = e.dataTransfer.getData('text/plain');
+        if (entryId) openMoveModal(entryId, zone.dataset.dropLoc, sectorId);
+        return;
+      }
+      /* Drop sur produit (réordonnement) */
+      var targetCard = e.target.closest('[data-reorder-product]');
+      if (targetCard) {
+        e.preventDefault();
+        var srcProductId = e.dataTransfer.getData('reorder-product');
+        var dstProductId = targetCard.dataset.reorderProduct;
+        if (srcProductId && srcProductId !== dstProductId) {
+          _applyReorder(srcProductId, dstProductId, targetCard, sector);
+        }
+        container.querySelectorAll('.reorder-drop-before,.reorder-drop-after')
+          .forEach(function(el) { el.classList.remove('reorder-drop-before','reorder-drop-after'); });
+      }
+    });
+
+    /* Dragover sur produit — indicateur visuel position */
+    container.addEventListener('dragover', function(e) {
+      var targetCard = e.target.closest('[data-reorder-product]');
+      if (!targetCard) return;
+      e.preventDefault();
+      container.querySelectorAll('.reorder-drop-before,.reorder-drop-after')
+        .forEach(function(el) { el.classList.remove('reorder-drop-before','reorder-drop-after'); });
+      var rect   = targetCard.getBoundingClientRect();
+      var isTop  = e.clientY < rect.top + rect.height / 2;
+      targetCard.classList.add(isTop ? 'reorder-drop-before' : 'reorder-drop-after');
+    });
+
+    function _cleanup() {
+      if (_drag && _drag.ghost) _drag.ghost.remove();
+      if (_drag && _drag.el) _drag.el.classList.remove('entry-dragging');
+      container.querySelectorAll('.drag-over').forEach(function(z) { z.classList.remove('drag-over'); });
+    }
+  }
+
+  /* ── Modale déplacement ── */
+  function openMoveModal(entryId, destLocRaw, sectorId) {
+    var sector = storeGetSectorById(sectorId);
+    if (!sector) return;
+    var entry = storeGetStockBySector(sectorId).find(function(e) { return e.id === entryId; });
+    if (!entry) return;
+    var prod = storeGetProductById(entry.productId);
+    var unit = prod ? (prod.unit || 'u') : 'u';
+
+    var destParts = destLocRaw ? destLocRaw.split('/') : [];
+    var destLoc   = destParts[0] ? { locId: destParts[0], sublocId: destParts[1] || '' } : '';
+
+    /* Label destination */
+    var destLabel = 'Sans emplacement';
+    if (destParts[0]) {
+      var locObj = (sector.locations || []).find(function(l) { return l.id === destParts[0]; });
+      if (locObj) {
+        destLabel = locObj.name;
+        if (destParts[1]) {
+          var subObj = (locObj.sublocs || []).find(function(s) { return s.id === destParts[1]; });
+          if (subObj) destLabel += ' › ' + subObj.name;
+        }
+      }
+    }
+
+    /* Vérifier source ≠ destination */
+    var srcKey  = entry.location && entry.location.locId ? entry.location.locId + '/' + (entry.location.sublocId || '') : '';
+    var destKey = destLocRaw || '';
+    if (srcKey === destKey) { showToast('Déjà à cet emplacement', 'warn'); return; }
+
+    var prodName = prod ? prod.name : '(inconnu)';
+    var lotInfo  = entry.lot ? ' — Lot ' + entry.lot : '';
+    var bodyHtml =
+      '<div style="font-size:12px;font-weight:600;margin-bottom:4px">' + escH(prodName + lotInfo) + '</div>'
+      + '<div style="font-size:11px;color:var(--text2);margin-bottom:14px">Vers : <strong>' + escH(destLabel) + '</strong></div>'
+      + '<div style="display:flex;gap:10px;margin-bottom:12px">'
+      + '<button class="btn btn-secondary" id="btn-move-all" style="flex:1">Tout (' + entry.qty + ' ' + escH(pluralUnit(unit, entry.qty)) + ')</button>'
+      + '<button class="btn btn-secondary" id="btn-move-partial" style="flex:1">Partiel</button>'
+      + '</div>'
+      + '<div id="move-qty-block" style="display:none">'
+      + '<div class="form-group" style="max-width:140px;margin:0 auto">'
+      + '<label style="text-align:center">Quantité</label>'
+      + '<input type="number" id="move-qty-input" inputmode="numeric" value="1" min="1"'
+      + ' max="' + (entry.qty - 1) + '" style="text-align:center;font-size:22px;font-weight:700">'
+      + '<div class="form-hint" style="text-align:center">Max : ' + (entry.qty - 1) + '</div>'
+      + '</div></div>';
+
+    var footerHtml =
+      '<button class="btn btn-secondary" data-close-modal="modal-move">Annuler</button>'
+      + '<button class="btn btn-primary" id="btn-move-confirm">Déplacer</button>';
+
+    var modal = createModal('modal-move', '⇆ Déplacer', bodyHtml, footerHtml, 'sm');
+    if (!modal) return;
+
+    var _moveAll = true;
+
+    modal.addEventListener('click', function(e) {
+      if (e.target.id === 'btn-move-all') {
+        _moveAll = true;
+        document.getElementById('move-qty-block').style.display = 'none';
+        e.target.classList.add('btn-primary'); e.target.classList.remove('btn-secondary');
+        var pb = document.getElementById('btn-move-partial');
+        if (pb) { pb.classList.remove('btn-primary'); pb.classList.add('btn-secondary'); }
+      }
+      if (e.target.id === 'btn-move-partial') {
+        _moveAll = false;
+        document.getElementById('move-qty-block').style.display = '';
+        e.target.classList.add('btn-primary'); e.target.classList.remove('btn-secondary');
+        var ab = document.getElementById('btn-move-all');
+        if (ab) { ab.classList.remove('btn-primary'); ab.classList.add('btn-secondary'); }
+        setTimeout(function() { var inp = document.getElementById('move-qty-input'); if (inp) { inp.focus(); inp.select(); } }, 50);
+      }
+      if (e.target.id === 'btn-move-confirm') {
+        var moveQty;
+        if (_moveAll) {
+          moveQty = entry.qty;
+        } else {
+          var inp = document.getElementById('move-qty-input');
+          moveQty = inp ? Math.max(1, parseInt(inp.value, 10) || 1) : 1;
+          if (moveQty >= entry.qty) { showToast('Quantité inférieure au stock source requise', 'warn'); return; }
+        }
+        closeModal('modal-move');
+        if (_moveAll) {
+          var existing = _findStockEntry(sectorId, entry.productId, entry.lot, entry.expiry, destLoc);
+          if (existing && existing.id !== entry.id) {
+            existing.qty += entry.qty; existing._updatedAt = Date.now();
+            storeUpsertStockEntry(existing); storeDeleteStockEntry(entry.id);
+          } else {
+            entry.location = destLoc; entry._updatedAt = Date.now();
+            storeUpsertStockEntry(entry);
+          }
+        } else {
+          var existing2 = _findStockEntry(sectorId, entry.productId, entry.lot, entry.expiry, destLoc);
+          if (existing2 && existing2.id !== entry.id) {
+            existing2.qty += moveQty; existing2._updatedAt = Date.now();
+            storeUpsertStockEntry(existing2);
+          } else {
+            storeUpsertStockEntry({ id: genId(), sectorId: sectorId, productId: entry.productId,
+              lot: entry.lot, expiry: entry.expiry, qty: moveQty, partial: entry.partial || false,
+              location: destLoc, _updatedAt: Date.now(), _deletedAt: null });
+          }
+          entry.qty -= moveQty; entry._updatedAt = Date.now();
+          if (entry.qty <= 0) storeDeleteStockEntry(entry.id);
+          else storeUpsertStockEntry(entry);
+        }
+        fsScheduleSave(); renderSectorContent();
+        showToast('Déplacement effectué', 'success');
+      }
+    });
+  }
+
+  /* Réordonner srcProduct avant/après dstProduct dans le secteur */
+  function _applyReorder(srcProductId, dstProductId, targetCard, sector) {
+    /* Récupérer tous les groupes dans l'ordre actuel */
+    var stock  = storeGetStockBySector(sector.id);
+    var groups = groupStockByProduct(stock, sector);
+    groups.forEach(function(g) {
+      g._order = g.product ? storeGetProductOrder(sector.id, g.product.id) : 9999;
+    });
+    groups.sort(function(a, b) {
+      if (a._order !== b._order) return a._order - b._order;
+      return (a.product ? a.product.name : '').localeCompare(b.product ? b.product.name : '');
+    });
+
+    /* Retirer srcProduct de la liste */
+    var ordered = groups.map(function(g) { return g.product ? g.product.id : ''; });
+    ordered = ordered.filter(function(id) { return id !== srcProductId; });
+
+    /* Insérer avant ou après dstProduct */
+    var dstIdx = ordered.indexOf(dstProductId);
+    var rect   = targetCard.getBoundingClientRect();
+    var lastY  = parseFloat(targetCard.dataset.lastDragY || '0');
+    /* Utiliser la classe CSS pour déterminer avant/après */
+    var insertAfter = targetCard.classList.contains('reorder-drop-after');
+    if (dstIdx === -1) {
+      ordered.push(srcProductId);
+    } else {
+      ordered.splice(insertAfter ? dstIdx + 1 : dstIdx, 0, srcProductId);
+    }
+
+    /* Sauvegarder le nouvel ordre */
+    ordered.forEach(function(productId, i) {
+      if (productId) storeSetProductOrder(sector.id, productId, i);
+    });
+    fsScheduleSave();
+    renderSectorContent();
+  }
+
+  window.openMoveModal  = openMoveModal;
+  window._initDragDrop  = _initDragDrop;
+
   window.groupStockByProduct  = groupStockByProduct;
 
 }());
@@ -3017,8 +3575,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 (function() {
   'use strict';
 
-  /* ── Rendu du module réglages ── */
-  /* renderSettings : stub — logique déplacée dans _renderSettingsInto */
+  /* Rendu du module réglages */
   function renderSettings() {
     window.dbg('renderSettings()', 'info');
     var modalContent = document.getElementById('settings-modal-content');
@@ -3082,8 +3639,23 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     var isEdit = !!sector;
     var title  = isEdit ? 'Modifier le secteur' : 'Nouveau secteur';
 
+    var modeLabel = sector ? (sector.mode === 'box' ? 'Boîte (unité indivisible)' : 'Unité (ampoule, comprimé…)') : null;
     var bodyHtml =
-      '<div class="form-group">'      + '<label>Nom du secteur</label>'      + '<input type="text" id="modal-sector-name" placeholder="Ex : Pharmacie centrale" value="' + escH(sector ? sector.name : '') + '">'      + '</div>'      + '<div class="form-group">'      + '<label>Mode de gestion</label>'      + '<select id="modal-sector-mode">'      + '<option value="unit"' + (!sector || sector.mode === 'unit' ? ' selected' : '') + '>Unité (ampoule, comprimé…)</option>'      + '<option value="box"'  + (sector && sector.mode === 'box'  ? ' selected' : '') + '>Boîte (unité indivisible)</option>'      + '</select>'      + '<div class="form-hint">Mode Unité : sorties partielles. Mode Boîte : sortie = boîte entière.</div>'      + '</div>';
+      '<div class="form-group"><label>Nom du secteur</label>'
+      + '<input type="text" id="modal-sector-name" placeholder="Ex : Pharmacie centrale" value="' + escH(sector ? sector.name : '') + '">'
+      + '</div>'
+      + (isEdit
+        /* Édition : mode en lecture seule */
+        ? '<div class="form-group"><label>Mode de gestion</label>'
+          + '<div style="padding:8px;background:var(--surface2);border-radius:6px;font-size:12px;color:var(--text2)">'
+          + escH(modeLabel) + '</div></div>'
+        /* Création : select */
+        : '<div class="form-group"><label>Mode de gestion</label>'
+          + '<select id="modal-sector-mode">'
+          + '<option value="unit">Unité (ampoule, comprimé…)</option>'
+          + '<option value="box">Boîte (unité indivisible)</option>'
+          + '</select>'
+          + '<div class="form-hint">Non modifiable après création.</div></div>');
 
     if (isEdit) {
       bodyHtml += '<div class="section-title" style="margin-top:16px">Emplacements</div>';
@@ -3173,6 +3745,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     if (!name) { showToast('Le nom est requis', 'danger'); return; }
 
     var existing = sectorId ? storeGetSectorById(sectorId) : null;
+    /* Mode : lu depuis le select uniquement à la création */
+    var modeVal = (!existing && modeInput) ? modeInput.value : (existing ? existing.mode : 'unit');
     var sector = existing ? Object.assign({}, existing) : {
       id: genId(),
       locations: [],
@@ -3262,8 +3836,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     showToast('Secteur supprimé', 'danger');
   }
 
-  /* ── Expose ── */
-  /* ── Modale réglages ── */
+  /* ── Modale réglages et exposition ── */
   function openSettingsModal() {
     /* Toggle : si visible (classe open), fermer. Si absente ou fermée, (re)créer. */
     var existing = document.getElementById('modal-settings');
@@ -3304,14 +3877,18 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     if (activeTab === 'general') {
       html += '<div class="settings-card">';
       html += '<div class="form-group">'
-        + '<label>Nom de l\'unité</label>'
-        + '<input type="text" id="settings-unit-name" value="' + escH(settings.unitName || '') + '" placeholder="Ex : Infirmerie BIMA">'
+        + '<label>Logo (image)</label>'
+        + (settings.appLogo ? '<img src="' + settings.appLogo + '" style="height:32px;margin-bottom:6px;display:block">'
+          + '<button class="btn btn-ghost btn-sm" id="btn-remove-logo">× Supprimer le logo</button>' : '')
+        + '<input type="file" id="settings-app-logo" accept="image/*" style="margin-top:6px">'
+        + '<div class="form-hint">Format PNG ou SVG recommandé. Taille max 200ko.</div>'
         + '</div>';
       html += '<div class="form-group">'
-        + '<label>Alerte péremption (jours)</label>'
-        + '<input type="number" id="settings-alert-days" inputmode="numeric" value="' + (settings.alertDaysExpiry || 30) + '" min="1" max="365">'
-        + '<div class="form-hint">Alerte affichée si un produit expire dans ce délai.</div>'
+        + '<label>Nom de la structure</label>'
+        + '<input type="text" id="settings-unit-name" value="' + escH(settings.unitName || '') + '" placeholder="Ex : Infirmerie BIMA">'
+        + '<div class="form-hint">Affiché dans le header à la place de « STOCK ».</div>'
         + '</div>';
+      /* alertDaysExpiry supprimé — badge jaune = fin du mois en dur */
       html += '<button class="btn btn-primary" id="btn-save-settings">Enregistrer</button>';
       html += '</div>';
     }
@@ -3362,7 +3939,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     }
 
     /* ── Version en bas de modale (hors cards) ── */
-    html += '<div style="text-align:center;font-size:10px;color:var(--text3);margin-top:16px;padding-top:8px;border-top:1px solid var(--border)">STOCK v0.0.36</div>';
+    html += '<div style="text-align:center;font-size:10px;color:var(--text3);margin-top:16px;padding-top:8px;border-top:1px solid var(--border)">STOCK v0.0.40</div>';
 
     var fresh = container.cloneNode(false);
     fresh.innerHTML = html;
@@ -3386,15 +3963,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
   /* renderSettings public : rend dans le container legacy (onglet) si présent,
      sinon rafraîchit la modale si elle est ouverte */
-  function renderSettings() {
-    window.dbg('renderSettings()', 'info');
-    var modalContent = document.getElementById('settings-modal-content');
-    if (modalContent) { _renderSettingsInto(modalContent); return; }
-    var container = document.getElementById('settings-content');
-    if (container) _renderSettingsInto(container);
-  }
-
-
   /* ── Modale correction manuelle de stock ── */
   function openStockFixModal() {
     var sectors = storeGetSectors().filter(function(s) { return s.id !== 'global'; });
@@ -3522,9 +4090,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   'use strict';
 
   /* ── Constantes ── */
-  var GUDID_API_BASE     = 'https://accessgudid.nlm.nih.gov/api/v3/devices/lookup.json?di=';
-  var BDPM_PRESENTATIONS = 'https://bdpmgf.vedielaute.fr/api/medicaments/presentations';
-  var BDPM_SPECIALITES   = 'https://bdpmgf.vedielaute.fr/api/medicaments/specialites';
+  var GUDID_API_BASE  = 'https://accessgudid.nlm.nih.gov/api/v3/devices/lookup.json?di=';
+  var GIYGAS_API_BASE = 'https://medicaments-api.giygas.dev/v1/medicaments';
   var SCAN_BEEP_FREQ = 880;
   var SCAN_BEEP_MS   = 80;
 
@@ -3535,10 +4102,10 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   var _scanSubtype   = null;    /* pour 'out' : 'delivery' | 'destruction' */
   var _scanTarget    = null;    /* sectorId destination (pour transfer) */
   var _pendingScan   = null;    /* résultat GS1 en attente de confirmation */
+  var _outMode       = null;    /* 'box' | 'partial' pour les sorties en mode boîte */
+  var _scanOutMode   = 'box';   /* 'box' | 'partial' pour la délivrance */
 
-  /* ── API BarcodeDetector disponible ? ── */
-  /* BarcodeDetector disponible ? (Chrome Android, Safari 17+, pas Firefox) */
-  /* isBarcodeDetectorAvailable — scan via getUserMedia uniquement désormais */
+  /* Scan disponible : getUserMedia + BarcodeDetector (Chrome Android, Safari 17+) */
   function isBarcodeDetectorAvailable() {
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   }
@@ -3574,10 +4141,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     _openVideoScan();
   }
 
-  /* ── Scan vidéo natif (getUserMedia + BarcodeDetector RAF 60fps) ──
-     Fallback : photo <input capture> si getUserMedia absent (file://)
-     ZXing supprimé — cible Android Chrome uniquement
-     ══════════════════════════════════════════════════════════════ */
+  /* Scan vidéo natif : getUserMedia + BarcodeDetector RAF 60fps */
 
   var _videoStream  = null;   /* MediaStream actif */
   var _rafHandle    = null;   /* requestAnimationFrame handle */
@@ -3598,11 +4162,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     return _nativeDetector;
   }
 
-  /* ── getUserMedia disponible ? ── */
-  /* Obsolète — check intégré dans isBarcodeDetectorAvailable */
-  function _isGetUserMediaAvailable() {
-    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-  }
 
   /* ── Ouvrir la modale vidéo et démarrer le stream ── */
   function _openVideoScan() {
@@ -3741,9 +4300,10 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       openQtyModal(cachedProduct, gs1);
     } else if (gs1.gtin) {
       /* Lookup en ligne */
-      _setStatus('Recherche produit…');
+      _setVideoStatus('Recherche produit…');
       lookupProduct(gs1.gtin)
         .then(function(product) {
+          _setVideoStatus('');
           if (product) {
             storeUpsertProduct(product);
             fsScheduleSave();
@@ -3753,6 +4313,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
           }
         })
         .catch(function() {
+          _setVideoStatus('');
           openUnknownProductModal(gs1);
         });
     } else {
@@ -3761,10 +4322,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     }
   }
 
-  /* -- Lookup produit : BDPM Open Medicaments puis GUDID --
-     Ordre : cache local (géré dans _onBarcodeDetected) → BDPM → GUDID */
-  /* Lookup produit : giygas.dev (médicaments FR) puis GUDID (DM)
-     Le cache local products[] est géré en amont dans _onBarcodeDetected */
+  /* Lookup produit : giygas.dev (1 appel CIP13/CIP7) puis GUDID en fallback DM.
+     Cache local products[] géré en amont dans _onBarcodeDetected. */
   function lookupProduct(gtin) {
     return lookupBDPM(gtin).then(function(p) {
       if (p) return p;
@@ -3772,11 +4331,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     });
   }
 
-  /* -- GUDID (FDA) — DM uniquement, CORS variable selon l'environnement --
-     Fonctionne en HTTPS (cors autorisé côté serveur), peut échouer en file://
-     Utilisé en fallback après BDPM */
-  /* GUDID (FDA) — fallback pour DM non trouvés dans BDPM
-     CORS permissif en HTTPS, peut échouer en file:// */
+  /* GUDID (FDA) — fallback DM non trouvés dans BDPM. CORS permissif en HTTPS. */
   function lookupGUDID(gtin) {
     var url  = GUDID_API_BASE + encodeURIComponent(gtin);
     var ctrl = AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined;
@@ -3804,77 +4359,60 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
      Étape 2 : /specialites/{cis}     → { denomination, forme_pharma, presentations[] }
      Avantage vs giygas.dev : couvre tous les CIP13 y compris hospitaliers/logistiques
   */
+  /* Lookup médicament via medicaments-api.giygas.dev
+     1 appel : GET /v1/medicaments?cip={cip13}
+     Fallback : CIP7 = cip13.slice(4,11) */
   function lookupBDPM(gtin) {
-    /* Extraire CIP13 depuis GTIN-14 */
     var cip13 = gtin.length === 14 ? gtin.slice(1) : gtin;
-    var ctrl  = AbortSignal.timeout ? AbortSignal.timeout(7000) : undefined;
+    var cip7  = cip13.length === 13 ? cip13.slice(4, 11) : null;
 
-    /* Étape 1 : trouver la présentation par CIP13 */
-    return fetch(BDPM_PRESENTATIONS + '?q=' + encodeURIComponent(cip13), { signal: ctrl })
-      .then(function(r) { return r.ok ? r.json() : null; })
-      .then(function(data) {
-        if (!data || !data.data || data.data.length === 0) return null;
-        var pres = data.data[0];
-        var cis     = pres.cis;
-        var libelle = pres.libelle || '';
-        if (!cis) return null;
+    function fetchByCip(cip) {
+      var url  = GIYGAS_API_BASE + '?cip=' + encodeURIComponent(cip);
+      var ctrl = AbortSignal.timeout ? AbortSignal.timeout(6000) : undefined;
+      return fetch(url, { signal: ctrl })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+          /* Réponse giygas v1 : objet unique (pas tableau) */
+          var item = Array.isArray(data) ? data[0] : data;
+          if (!item) return null;
 
-        /* Étape 2 : récupérer la spécialité pour le nom et la forme */
-        var ctrl2 = AbortSignal.timeout ? AbortSignal.timeout(7000) : undefined;
-        return fetch(BDPM_SPECIALITES + '/' + encodeURIComponent(cis), { signal: ctrl2 })
-          .then(function(r) { return r.ok ? r.json() : null; })
-          .then(function(spec) {
-            if (!spec) return null;
+          /* Nom : elementPharmaceutique contient déjà la forme */
+          var name = item.elementPharmaceutique || item.denomination || item.nom || null;
+          if (!name) return null;
 
-            /* La réponse est directement l'objet spécialité (pas data.data) */
-            var s    = (spec.data !== undefined) ? spec.data : spec;
-            var name = s.denomination || null;
-            if (!name) return null;
+          /* pkgQty depuis presentation[0].libelle */
+          var pkgQty  = 0;
+          var libelle = '';
+          if (item.presentation && item.presentation.length > 0) {
+            libelle = item.presentation[0].libelle || '';
+          } else if (item.presentations && item.presentations.length > 0) {
+            libelle = item.presentations[0].libelle || '';
+          }
+          if (libelle) {
+            var mStart = libelle.match(/^(\d+)\s/);
+            var mDe    = libelle.match(/\bde\s+(\d+)\b/i);
+            if (mStart) pkgQty = parseInt(mStart[1], 10);
+            else if (mDe) pkgQty = parseInt(mDe[1], 10);
+          }
 
-            var forme = s.forme_pharma || '';
+          return {
+            id:          genId(),
+            gtin:        gtin,
+            name:        name,
+            category:    'drug',
+            unit:        mapFormeToUnit(item.formePharmaceutique || ''),
+            pkgQty:      pkgQty || 0,
+            alertQtyMin: 0,
+            _updatedAt:  Date.now()
+          };
+        })
+        .catch(function() { return null; });
+    }
 
-            /* Extraire pkgQty depuis le libellé de la présentation scannée
-               Ex : "plaquette(s) thermoformée(s) PVC-aluminium de 100  comprimé(s)"
-                    → cherche "de N" ou "N unité(s)" */
-            var pkgQty = 0;
-            if (libelle) {
-              var mDe    = libelle.match(/\bde\s+(\d+)\b/i);
-              var mStart = libelle.match(/^(\d+)\s/);
-              if (mDe)    pkgQty = parseInt(mDe[1], 10);
-              else if (mStart) pkgQty = parseInt(mStart[1], 10);
-            }
-
-            /* Retrouver le libellé exact de la présentation scannée
-               pour affiner pkgQty si la réponse specialites contient la liste */
-            if (s.presentations && Array.isArray(s.presentations)) {
-              var matchPres = s.presentations.find(function(p) {
-                return p.cip13 === cip13;
-              });
-              if (matchPres && matchPres.libelle) {
-                var mDe2    = matchPres.libelle.match(/\bde\s+(\d+)\b/i);
-                var mStart2 = matchPres.libelle.match(/^(\d+)\s/);
-                if (mDe2)    pkgQty = parseInt(mDe2[1], 10);
-                else if (mStart2) pkgQty = parseInt(mStart2[1], 10);
-              }
-            }
-
-            window.dbg('lookupBDPM OK : ' + name + ' (CIS ' + cis + ')', 'ok');
-            return {
-              id:          genId(),
-              gtin:        gtin,
-              name:        name,
-              category:    'drug',
-              unit:        mapFormeToUnit(forme),
-              pkgQty:      pkgQty || 0,
-              alertQtyMin: 0,
-              _updatedAt:  Date.now()
-            };
-          });
-      })
-      .catch(function(e) {
-        window.dbg('lookupBDPM erreur: ' + e.message, 'warn');
-        return null;
-      });
+    return fetchByCip(cip13).then(function(p) {
+      if (p) return p;
+      return cip7 ? fetchByCip(cip7) : null;
+    });
   }
 
   /* ── Popup quantité post-scan ── */
@@ -3913,19 +4451,36 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         + 'Type : <strong>' + subtypeLabel + '</strong></div>';
     }
 
-    /* Pour TRANSFER : choix secteur destination */
-    if (_scanContext === 'transfer') {
-      var sectors = storeGetSectors().filter(function(s) {
-        return s.id !== sectorId && s.id !== 'global';
-      });
-      var opts = sectors.map(function(s) {
-        return '<option value="' + escH(s.id) + '">' + escH(s.name) + '</option>';
-      }).join('');
-      bodyHtml +=
-        '<div class="form-group" style="margin-top:12px">'
-        + '<label>Secteur destination</label>'
-        + '<select id="modal-qty-target">' + opts + '</select>'
-        + '</div>';
+    /* Pour TRANSFER : afficher la destination déjà choisie (pas de re-sélection) */
+    if (_scanContext === 'transfer' && _scanTarget) {
+      var destSector = storeGetSectorById(_scanTarget);
+      var destLabel  = destSector ? destSector.name : _scanTarget;
+      var modeLabel  = _scanSubtype === 'partial' ? ' — unités' : '';
+      bodyHtml += '<div style="font-size:11px;color:var(--text2);margin-top:8px">'
+        + 'Vers : <strong>' + escH(destLabel) + '</strong>' + escH(modeLabel) + '</div>';
+    }
+
+    /* ADD : sélecteur emplacement si le secteur en a */
+    if (_scanContext === 'add' && sector) {
+      var locs = sector.locations || [];
+      if (locs.length > 0) {
+        var locOpts = '<option value="">— Sans emplacement —</option>';
+        locs.forEach(function(loc) {
+          var subs = loc.sublocs || [];
+          if (subs.length > 0) {
+            subs.forEach(function(sub) {
+              locOpts += '<option value="' + escH(loc.id) + '/' + escH(sub.id) + '">'
+                + escH(loc.name) + ' › ' + escH(sub.name) + '</option>';
+            });
+          }
+          locOpts += '<option value="' + escH(loc.id) + '/">'
+            + escH(loc.name) + ' (sans étagère)</option>';
+        });
+        bodyHtml += '<div class="form-group" style="margin-top:10px">'
+          + '<label>Emplacement</label>'
+          + '<select id="modal-qty-location">' + locOpts + '</select>'
+          + '</div>';
+      }
     }
 
     var actionLabel = _scanContext === 'add' ? 'Ajouter au stock'
@@ -3960,20 +4515,27 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     /* Subtype déjà défini avant le scan via openActionModal */
     var subtype = _scanSubtype;
 
-    var targetInput = document.getElementById('modal-qty-target');
-    var targetSectorId = targetInput ? targetInput.value : _scanTarget;
+    /* Secteur destination : _scanTarget (défini avant le scan) — plus de select dans la modale */
+    var targetSectorId = _scanTarget;
+
+    /* Emplacement choisi (ADD uniquement) */
+    var locInput  = document.getElementById('modal-qty-location');
+    var locRaw    = locInput ? locInput.value : '';
+    var locParts  = locRaw ? locRaw.split('/') : [];
+    var locationObj = locParts[0] ? { locId: locParts[0], sublocId: locParts[1] || '' } : null;
 
     closeModal('modal-qty');
 
     applyMovement({
       context:        _scanContext,
       subtype:        subtype,
+      outMode:        _scanOutMode,
       sectorId:       getCurrentSectorId(),
       targetSectorId: targetSectorId,
       product:        product,
       gs1:            gs1,
       qty:            qty,
-      location:       null
+      location:       locationObj
     });
 
     /* Relance selon le mode */
@@ -4072,7 +4634,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       category:    catInput      ? catInput.value                             : 'drug',
       unit:        unitInput     ? unitInput.value || 'unite' : 'unite',
       pkgQty:      0,
-      alertQtyMin: alertQtyInput ? Math.max(0, parseInt(alertQtyInput.value, 10) || 0) : 0,
+      alertQtyMin:     alertQtyInput ? Math.max(0, parseInt(alertQtyInput.value, 10) || 0) : 0,
+      alertQtyOptimal: 0,
       _updatedAt:  Date.now()
     };
 
@@ -4231,11 +4794,13 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     _scanTarget  = null;
     _scanMulti   = false;
 
-    var titles = { add: '＋ Ajouter au stock', transfer: '⇄ Transférer', out: '↑ Sortir du stock' };
+    var titles = { add: '+ Ajouter au stock', transfer: 'Transférer', out: 'Sortir du stock' };
     var title  = titles[context] || 'Scanner';
     var bodyHtml = '';
 
     /* OUT : choix délivrance / destruction */
+    var srcSectorOut = storeGetSectorById(getCurrentSectorId());
+    var isBoxOut = srcSectorOut && srcSectorOut.mode === 'box';
     if (context === 'out') {
       bodyHtml +=
         '<div class="form-group">'
@@ -4244,12 +4809,22 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         + '<button class="btn btn-warning" id="btn-subtype-delivery"  style="padding:14px;font-size:13px">💊 Délivrance</button>'
         + '<button class="btn btn-ghost"   id="btn-subtype-destruction" style="padding:14px;font-size:13px">🗑 Destruction</button>'
         + '</div></div>';
+      /* En mode boîte, proposer délivrance en boîtes ou en unités */
+      if (isBoxOut) {
+        bodyHtml += '<div class="form-group" id="delivery-mode-block" style="display:none">'
+          + '<label>Mode de délivrance</label>'
+          + '<select id="modal-delivery-mode">'
+          + '<option value="box">Boîtes entières</option>'
+          + '<option value="partial">Unités (boîte sécable)</option>'
+          + '</select></div>';
+      }
     }
 
-    /* TRANSFER : choix secteur destination */
+    /* TRANSFER : secteur destination + mode si source en boîte */
     if (context === 'transfer') {
-      var sectorId = getCurrentSectorId();
-      var others = storeGetSectors().filter(function(s) {
+      var sectorId  = getCurrentSectorId();
+      var srcSector = storeGetSectorById(sectorId);
+      var others    = storeGetSectors().filter(function(s) {
         return s.id !== sectorId && s.id !== 'global';
       });
       if (others.length === 0) {
@@ -4259,11 +4834,17 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       var opts = others.map(function(s) {
         return '<option value="' + escH(s.id) + '">' + escH(s.name) + '</option>';
       }).join('');
-      bodyHtml +=
-        '<div class="form-group">'
-        + '<label>Secteur destination</label>'
-        + '<select id="modal-action-target">' + opts + '</select>'
-        + '</div>';
+      bodyHtml += '<div class="form-group"><label>Secteur destination</label>'
+        + '<select id="modal-action-target">' + opts + '</select></div>';
+
+      /* Si source en mode boîte : proposer boîtes ou unités */
+      if (srcSector && srcSector.mode === 'box') {
+        bodyHtml += '<div class="form-group"><label>Mode de transfert</label>'
+          + '<select id="modal-transfer-mode">'
+          + '<option value="box">Boîtes entières</option>'
+          + '<option value="partial">Unités (boîte sécable)</option>'
+          + '</select></div>';
+      }
     }
 
     /* Coche mouvements multiples */
@@ -4278,7 +4859,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       '<button class="btn btn-secondary" data-close-modal="modal-action">Annuler</button>'
       + '<button class="btn btn-primary" id="btn-action-launch"'
       + (context === 'out' ? ' disabled style="opacity:.4"' : '')
-      + '>📷 Scanner</button>';
+      + '>Scanner</button>';
 
     var modal = createModal('modal-action', title, bodyHtml, footerHtml, 'sm');
     if (!modal) return;
@@ -4293,12 +4874,16 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
           if (btnD) { btnD.classList.add('btn-warning');    btnD.classList.remove('btn-ghost');   }
           if (btnX) { btnX.classList.remove('btn-danger');  btnX.classList.add('btn-ghost');      }
           if (btnL) { btnL.removeAttribute('disabled');     btnL.style.opacity = '1'; }
+          var dmBlock = document.getElementById('delivery-mode-block');
+          if (dmBlock) dmBlock.style.display = '';
         }
         if (e.target.id === 'btn-subtype-destruction') {
           _scanSubtype = 'destruction';
           if (btnX) { btnX.classList.add('btn-danger');     btnX.classList.remove('btn-ghost');   }
           if (btnD) { btnD.classList.remove('btn-warning'); btnD.classList.add('btn-ghost');      }
           if (btnL) { btnL.removeAttribute('disabled');     btnL.style.opacity = '1'; }
+          var dmBlock2 = document.getElementById('delivery-mode-block');
+          if (dmBlock2) dmBlock2.style.display = 'none';
         }
         if (e.target.id === 'btn-action-launch') _launchFromActionModal();
       });
@@ -4310,10 +4895,16 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   }
 
   function _launchFromActionModal() {
-    var multiCheck  = document.getElementById('modal-action-multi');
-    var targetInput = document.getElementById('modal-action-target');
-    _scanMulti  = !!(multiCheck && multiCheck.checked);
-    _scanTarget = targetInput ? targetInput.value : null;
+    var multiCheck    = document.getElementById('modal-action-multi');
+    var targetInput   = document.getElementById('modal-action-target');
+    var transferMode  = document.getElementById('modal-transfer-mode');
+    var delivMode     = document.getElementById('modal-delivery-mode');
+    _scanMulti   = !!(multiCheck && multiCheck.checked);
+    _scanTarget  = targetInput  ? targetInput.value  : null;
+    /* Transfer : stocker le mode (box/partial) dans _scanSubtype */
+    if (transferMode) _scanSubtype = transferMode.value;
+    /* Delivery : stocker le mode de délivrance pour _applyOut */
+    _outMode = delivMode ? delivMode.value : null;
     closeModal('modal-action');
     startScan(_scanContext, _scanSubtype, _scanTarget);
   }
@@ -4342,12 +4933,15 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   function applyMovement(params) {
     var context        = params.context;
     var subtype        = params.subtype        || null;
+    var outMode        = params.outMode        || 'box';
     var sectorId       = params.sectorId;
     var targetSectorId = params.targetSectorId || null;
     var product        = params.product;
     var gs1            = params.gs1            || {};
     var qty            = params.qty            || 1;
     var location       = params.location       || null;
+    /* outMode transmis de _launchFromActionModal → _confirmQty → ici */
+    if (params.outMode !== undefined) params.outMode = params.outMode;
 
     if (!product || !sectorId) {
       showToast('Erreur : produit ou secteur manquant', 'danger');
@@ -4360,10 +4954,10 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         _applyIn(sectorId, product, gs1, qty, location);
         ok = true;
       } else if (context === 'out') {
-        ok = _applyOut(sectorId, product, gs1, qty, subtype);
+        ok = _applyOut(sectorId, product, gs1, qty, subtype, { outMode: outMode });
       } else if (context === 'transfer') {
         if (!targetSectorId) { showToast('Secteur destination manquant', 'danger'); return; }
-        ok = _applyTransfer(sectorId, targetSectorId, product, gs1, qty);
+        ok = _applyTransfer(sectorId, targetSectorId, product, gs1, qty, params);
       }
     } catch(e) {
       window.dbg('[applyMovement] ' + e.message, 'error');
@@ -4422,16 +5016,58 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
   /* ── Sortie de stock ── */
   /* ── Sortie de stock ── */
-  function _applyOut(sectorId, product, gs1, qty, subtype) {
+  function _applyOut(sectorId, product, gs1, qty, subtype, params) {
     var sector = storeGetSectorById(sectorId);
     if (!sector) throw new Error('Secteur introuvable');
+    var isBox  = sector.mode === 'box';
+    var pkgQty = product.pkgQty || 0;
 
+    /* Délivrance partielle (unités depuis boîte) */
+    if (isBox && subtype === 'delivery' && params && params.outMode === 'partial') {
+      return _applyOutPartial(sectorId, product, gs1, qty);
+    }
+
+    /* Destruction : toujours à la boîte (entière ou entamée) */
+    if (subtype === 'destruction') {
+      var entries = storeGetStockBySector(sectorId).filter(function(e) {
+        return e.productId === product.id && e.qty > 0 &&
+               (!gs1.lot || (e.lot || '') === (gs1.lot || ''));
+      });
+      if (entries.length === 0) {
+        showToast('Produit non trouvé en stock', 'danger');
+        return false;
+      }
+      /* Détruire boîte par boîte selon qty demandée */
+      var remaining = qty;
+      entries.forEach(function(e) {
+        if (remaining <= 0) return;
+        /* Boîte entamée : détruire les unités restantes (pas pkgQty) */
+        var destroyed = e.partial ? e.qty : Math.min(e.qty, remaining);
+        remaining -= destroyed;
+        e.qty -= destroyed;
+        if (e.qty <= 0) {
+          storeDeleteStockEntry(e.id);
+        } else {
+          storeUpsertStockEntry(e);
+        }
+        storeAddMovement({
+          type: MOVEMENT_OUT, subtype: 'destruction',
+          sectorId: sectorId, targetSectorId: null,
+          productId: product.id, lot: e.lot, expiry: e.expiry,
+          qty: destroyed, note: ''
+        });
+      });
+      var unitLabel = isBox && pkgQty > 0 ? pluralUnit('boite', qty) : pluralUnit(product.unit || 'unite', qty);
+      showToast('🗑 Destruction : ' + qty + ' ' + unitLabel + ' — ' + product.name, 'success');
+      return true;
+    }
+
+    /* Délivrance normale (boîtes entières ou mode unité) */
     var entry = _findBestEntryForOut(sectorId, product.id, gs1.lot, gs1.expiry);
     if (!entry) {
       showToast('Produit non trouvé en stock dans ce secteur', 'danger');
-      return false;   /* signaler l'échec sans exception */
+      return false;
     }
-
     if (entry.qty < qty) {
       showToast('Quantité insuffisante en stock (' + entry.qty + ' disponible)', 'danger');
       return false;
@@ -4445,24 +5081,80 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     }
 
     storeAddMovement({
-      type:           MOVEMENT_OUT,
-      subtype:        subtype || 'delivery',
-      sectorId:       sectorId,
-      targetSectorId: null,
-      productId:      product.id,
-      lot:            entry.lot,
-      expiry:         entry.expiry,
-      qty:            qty,
-      note:           ''
+      type: MOVEMENT_OUT, subtype: subtype || 'delivery',
+      sectorId: sectorId, targetSectorId: null,
+      productId: product.id, lot: entry.lot, expiry: entry.expiry,
+      qty: qty, note: ''
     });
 
     showToast('− ' + qty + ' ' + pluralUnit(product.unit || 'unite', qty) + ' sorti' + (qty > 1 ? 's' : '') + ' — ' + product.name, 'success');
     return true;
   }
 
+  /* Délivrance partielle en unités depuis une boîte (mode boîte) */
+  function _applyOutPartial(sectorId, product, gs1, unitQty) {
+    var pkgQty = product.pkgQty || 0;
+    if (pkgQty <= 0) {
+      showToast('Conditionnement inconnu — impossible de délivrer en unités', 'danger');
+      return false;
+    }
+    var stock = storeGetStockBySector(sectorId).filter(function(e) {
+      return e.productId === product.id && e.qty > 0 &&
+             (!gs1.lot || (e.lot || '') === (gs1.lot || ''));
+    });
+    /* Priorité : boîte entamée */
+    var fromEntry = null;
+    var partials = stock.filter(function(e) { return e.partial && e.qty >= unitQty; });
+    if (partials.length > 0) {
+      fromEntry = partials[0];
+    } else {
+      var full = stock.filter(function(e) { return !e.partial && e.qty >= 1; });
+      if (full.length > 0) fromEntry = full[0];
+    }
+    if (!fromEntry) { showToast('Stock insuffisant', 'danger'); return false; }
+
+    var availableUnits = fromEntry.partial ? fromEntry.qty : fromEntry.qty * pkgQty;
+    if (availableUnits < unitQty) {
+      showToast('Quantité insuffisante (' + availableUnits + ' ' + pluralUnit(product.unit || 'unite', availableUnits) + ' disponibles)', 'danger');
+      return false;
+    }
+    var remainingUnits = availableUnits - unitQty;
+    if (remainingUnits <= 0) {
+      storeDeleteStockEntry(fromEntry.id);
+    } else if (fromEntry.partial) {
+      fromEntry.qty = remainingUnits; fromEntry._updatedAt = Date.now();
+      storeUpsertStockEntry(fromEntry);
+    } else {
+      if (fromEntry.qty > 1) {
+        fromEntry.qty -= 1; fromEntry._updatedAt = Date.now();
+        storeUpsertStockEntry(fromEntry);
+        storeUpsertStockEntry({ id: genId(), sectorId: sectorId, productId: product.id,
+          lot: fromEntry.lot, expiry: fromEntry.expiry, qty: remainingUnits,
+          partial: true, location: fromEntry.location || '', _updatedAt: Date.now(), _deletedAt: null });
+      } else {
+        fromEntry.qty = remainingUnits; fromEntry.partial = true; fromEntry._updatedAt = Date.now();
+        storeUpsertStockEntry(fromEntry);
+      }
+    }
+    storeAddMovement({ type: MOVEMENT_OUT, subtype: 'delivery', sectorId: sectorId,
+      targetSectorId: null, productId: product.id, lot: fromEntry.lot, expiry: fromEntry.expiry,
+      qty: unitQty, note: 'Délivrance partielle boîte sécable' });
+    showToast('💊 − ' + unitQty + ' ' + pluralUnit(product.unit || 'unite', unitQty) + ' délivrés — ' + product.name, 'success');
+    return true;
+  }
+
   /* ── Transfert entre secteurs ── */
   /* ── Transfert inter-secteurs ── */
-  function _applyTransfer(fromSectorId, toSectorId, product, gs1, qty) {
+  function _applyTransfer(fromSectorId, toSectorId, product, gs1, qty, params) {
+    var fromSector = storeGetSectorById(fromSectorId);
+    var toSector   = storeGetSectorById(toSectorId);
+
+    /* Mode partiel explicitement demandé via le select avant scan */
+    var transferSubtype = params ? (params.subtype || null) : null;
+    if (transferSubtype === 'partial') {
+      return _applyTransferPartial(fromSectorId, toSectorId, product, gs1, qty);
+    }
+
     var fromEntry = _findBestEntryForOut(fromSectorId, product.id, gs1.lot, gs1.expiry);
     if (!fromEntry) {
       showToast('Produit non trouvé en stock dans ce secteur', 'danger');
@@ -4492,6 +5184,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         lot:        fromEntry.lot,
         expiry:     fromEntry.expiry,
         qty:        qty,
+        partial:    false,
         location:   '',
         _updatedAt: Date.now(),
         _deletedAt: null
@@ -4510,8 +5203,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       note:           ''
     });
 
-    var toSector = storeGetSectorById(toSectorId);
-    showToast('Transfert : ' + qty + ' ' + pluralUnit(product.unit || 'unite', qty) + ' vers ' + (toSector ? toSector.name : toSectorId), 'success');
+    var toSec = storeGetSectorById(toSectorId);
+    showToast('Transfert : ' + qty + ' ' + pluralUnit(product.unit || 'unite', qty) + ' vers ' + (toSec ? toSec.name : toSectorId), 'success');
     return true;
   }
 
@@ -4563,6 +5256,156 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     return sorted[0] || null;
   }
 
+
+  /* ── Transfert partiel depuis une boîte (boîte sécable) ──
+     Scénario : secteur source en mode 'box', on transfère N unités
+     (pas N boîtes) vers un secteur en mode 'unit'.
+     Résultat :
+       - Source : boîte entamée qty = pkgQty - N (partial:true)
+       - Destination : N unités ajoutées
+  */
+  /* Transfert partiel : N unités depuis une boîte (mode boîte → mode unité).
+     entry.qty = nombre de BOÎTES en stock.
+     unitQty   = nombre d'UNITÉS à transférer.
+     Conversion : 1 boîte = pkgQty unités. */
+  function _applyTransferPartial(fromSectorId, toSectorId, product, gs1, unitQty) {
+    var pkgQty = product.pkgQty || 0;
+    if (pkgQty <= 0) {
+      showToast('Conditionnement inconnu (pkgQty=0) — impossible de sécabiliser', 'danger');
+      return false;
+    }
+
+
+    /* Chercher les entrées du produit dans la source */
+    var stock = storeGetStockBySector(fromSectorId).filter(function(e) {
+      return e.productId === product.id && e.qty > 0 &&
+             (!gs1.lot || (e.lot || '') === (gs1.lot || ''));
+    });
+
+
+    /* Convertir stock en unités disponibles pour trouver la bonne entrée.
+       - Entrée partielle : qty = unités restantes
+       - Entrée complète  : qty = boîtes × pkgQty = unités totales */
+    var fromEntry = null;
+
+    /* Priorité 1 : boîte déjà entamée avec assez d'unités */
+    var partials = stock.filter(function(e) {
+      return e.partial && e.qty >= unitQty;
+    });
+    if (partials.length > 0) {
+      fromEntry = partials[0];
+    }
+
+    /* Priorité 2 : boîte complète (qty = nb boîtes, chaque boîte = pkgQty unités) */
+    if (!fromEntry) {
+      var full = stock.filter(function(e) {
+        return !e.partial && e.qty >= 1; /* au moins 1 boîte */
+      });
+      if (full.length > 0) {
+        fromEntry = full[0];
+      }
+    }
+
+    if (!fromEntry) {
+      showToast('Stock insuffisant pour ce transfert', 'danger');
+      return false;
+    }
+
+    /* Vérifier qu'on a assez d'unités disponibles */
+    var availableUnits = fromEntry.partial
+      ? fromEntry.qty                    /* déjà en unités */
+      : fromEntry.qty * pkgQty;          /* boîtes → unités */
+
+
+    if (availableUnits < unitQty) {
+      showToast('Quantité insuffisante (' + availableUnits + ' unités disponibles)', 'danger');
+      return false;
+    }
+
+    /* Calculer ce qui reste dans la boîte source après transfert */
+    var remainingUnits = availableUnits - unitQty;
+
+    if (remainingUnits <= 0) {
+      /* Boîte vidée complètement */
+      storeDeleteStockEntry(fromEntry.id);
+    } else if (fromEntry.partial) {
+      /* Boîte déjà partielle : juste réduire le qty en unités */
+      fromEntry.qty        = remainingUnits;
+      fromEntry._updatedAt = Date.now();
+      storeUpsertStockEntry(fromEntry);
+    } else {
+      /* Boîte complète entamée : transformer en entrée partielle en unités */
+      /* Si plusieurs boîtes : réduire d'1 boîte + créer entrée partielle */
+      if (fromEntry.qty > 1) {
+        /* Déduire 1 boîte */
+        fromEntry.qty       -= 1;
+        fromEntry._updatedAt = Date.now();
+        storeUpsertStockEntry(fromEntry);
+        /* Créer l'entrée partielle avec les unités restantes */
+        storeUpsertStockEntry({
+          id:         genId(),
+          sectorId:   fromSectorId,
+          productId:  product.id,
+          lot:        fromEntry.lot,
+          expiry:     fromEntry.expiry,
+          qty:        remainingUnits,
+          partial:    true,
+          location:   fromEntry.location || '',
+          _updatedAt: Date.now(),
+          _deletedAt: null
+        });
+      } else {
+        /* 1 seule boîte → devient partielle */
+        fromEntry.qty        = remainingUnits;
+        fromEntry.partial    = true;
+        fromEntry._updatedAt = Date.now();
+        storeUpsertStockEntry(fromEntry);
+      }
+    }
+
+    /* Ajouter les unités dans la destination */
+    var toEntry = _findStockEntry(toSectorId, product.id, fromEntry.lot, fromEntry.expiry);
+    if (toEntry) {
+      toEntry.qty        += unitQty;
+      toEntry._updatedAt  = Date.now();
+      storeUpsertStockEntry(toEntry);
+    } else {
+      storeUpsertStockEntry({
+        id:         genId(),
+        sectorId:   toSectorId,
+        productId:  product.id,
+        lot:        fromEntry.lot,
+        expiry:     fromEntry.expiry,
+        qty:        unitQty,
+        partial:    false,
+        location:   '',
+        _updatedAt: Date.now(),
+        _deletedAt: null
+      });
+    }
+
+    storeAddMovement({
+      type:           MOVEMENT_TRANSFER,
+      subtype:        'partial',
+      sectorId:       fromSectorId,
+      targetSectorId: toSectorId,
+      productId:      product.id,
+      lot:            fromEntry.lot,
+      expiry:         fromEntry.expiry,
+      qty:            unitQty,
+      note:           'Transfert partiel boîte sécable'
+    });
+
+    var toSector = storeGetSectorById(toSectorId);
+    var unit     = pluralUnit(product.unit || 'unite', unitQty);
+    showToast('Transfert : ' + unitQty + ' ' + unit + ' vers ' + (toSector ? toSector.name : toSectorId), 'success');
+    return true;
+  }
+
+  /* ── Popup transfert partiel ──
+     Demande combien d'unités transférer depuis une boîte */
+
+
   /* ── Expose ── */
   window.applyMovement = applyMovement;
 
@@ -4579,12 +5422,12 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
   /* ── Onglets disponibles ── */
   var TABS = [
-    { id: 'expiry1', label: 'Périmés M+1' },
-    { id: 'expiry3', label: 'Périmés M+3' },
+    { id: 'expiry', label: 'Périmés' },
     { id: 'movements', label: 'Mouvements' },
     { id: 'stock',    label: 'Stock global' }
   ];
-  var _currentTab = 'expiry1';
+  var _currentTab = 'expiry';
+  var _expiryDays = 30; /* délai libre pour l'extraction périmés */
 
   /* ── Point d'entrée ── */
   function renderReport() {
@@ -4606,6 +5449,12 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         switchView('sector');
         window.renderSectorContent();
         return;
+      }
+      /* Saisie délai périmés */
+      if (e.target.id === 'btn-report-expiry-apply') {
+        var daysEl = document.getElementById('report-expiry-days');
+        _expiryDays = daysEl ? Math.max(0, parseInt(daysEl.value, 10) || 30) : 30;
+        renderReport(); return;
       }
       /* Export CSV */
       if (e.target.closest('[data-export-csv]')) {
@@ -4631,8 +5480,16 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     html += '</div>';
 
     /* Contenu de l'onglet */
-    if (_currentTab === 'expiry1')    html += _renderExpiryTab(30,  'M+1 — Expirations dans 30 jours');
-    if (_currentTab === 'expiry3')    html += _renderExpiryTab(90,  'M+3 — Expirations dans 90 jours');
+    if (_currentTab === 'expiry') {
+      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+      html += '<label style="font-size:11px">Afficher les produits expirant dans</label>';
+      html += '<input type="number" id="report-expiry-days" inputmode="numeric" value="' + _expiryDays + '"'
+        + ' min="0" max="365" style="width:60px;text-align:center;font-size:12px">';
+      html += '<label style="font-size:11px">jours</label>';
+      html += '<button class="btn btn-primary btn-sm" id="btn-report-expiry-apply">OK</button>';
+      html += '</div>';
+      html += _renderExpiryTab(_expiryDays, 'Expirations dans ' + _expiryDays + ' jours');
+    }
     if (_currentTab === 'movements')  html += _renderMovementsTab();
     if (_currentTab === 'stock')      html += _renderStockTab();
 
@@ -4735,6 +5592,12 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
     var TYPE_LABEL = { 'in': 'Entrée', 'out': 'Sortie', 'transfer': 'Transfert' };
     var TYPE_COLOR = { 'in': 'var(--success)', 'out': 'var(--danger)', 'transfer': 'var(--warn)' };
+    var SUBTYPE_LABEL = {
+      'delivery':    'Délivrance',
+      'destruction': 'Destruction',
+      'correction':  'Correction',
+      'partial':     'Partiel'
+    };
 
     var html = '<div>';
     html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
@@ -4771,6 +5634,9 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         }
         var typeColor = TYPE_COLOR[m.type] || 'var(--text2)';
         var typeLabel = TYPE_LABEL[m.type] || m.type;
+        if (m.subtype && SUBTYPE_LABEL[m.subtype]) {
+          typeLabel += ' — ' + SUBTYPE_LABEL[m.subtype];
+        }
         var unit = product ? (product.unit || 'u') : 'u';
         var dateStr = m.date ? fmtDate(new Date(m.date)) : '-';
         html += '<tr style="border-bottom:1px solid var(--border)">';
@@ -4797,7 +5663,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   function _renderStockTab() {
     var sectors  = storeGetSectors().filter(function(s) { return s.id !== 'global'; });
     var settings = storeGetSettings();
-    var alertDays = settings.alertDaysExpiry || 30;
     var rows = [];
 
     sectors.forEach(function(sector) {
@@ -4807,7 +5672,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         var worst   = 'ok';
         var nearestExpiry = null;
         g.entries.forEach(function(e) {
-          var s = expiryStatus(e.expiry, alertDays);
+          var s = expiryStatus(e.expiry);
           if (s === 'danger') worst = 'danger';
           else if (s === 'warn' && worst !== 'danger') worst = 'warn';
           if (e.expiry && (!nearestExpiry || e.expiry < nearestExpiry)) nearestExpiry = e.expiry;
@@ -4987,247 +5852,15 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   /* ── Construire la liste des entrées stock concernées ──
      sectorFilter = 'all' ou sectorId
      mode : 'expired' | 'expiry_m1' | 'expiry_m3' | 'low_stock'        */
-  function _buildReport(sectorFilter, mode) {
-    var settings  = storeGetSettings();
-    var alertDays = settings.alertDaysExpiry || 30;
-    var sectors   = storeGetSectors().filter(function(s) { return s.id !== 'global'; });
-    if (sectorFilter !== 'all') {
-      sectors = sectors.filter(function(s) { return s.id === sectorFilter; });
-    }
-
-    var today     = new Date();
-    var todayStr  = today.getFullYear() + '-' + pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
-    var limitStr  = null;
-    if (mode === 'expiry_m1') limitStr = _endOfMonth(monthOffset(1));
-    if (mode === 'expiry_m3') limitStr = _endOfMonth(monthOffset(3));
-
-    var rows = [];
-
-    sectors.forEach(function(sector) {
-      var stock    = storeGetStockBySector(sector.id);
-      var products = storeGetProducts();
-
-      if (mode === 'low_stock') {
-        /* Regrouper par produit et vérifier le seuil */
-        var byProduct = {};
-        stock.forEach(function(e) {
-          if (!byProduct[e.productId]) byProduct[e.productId] = 0;
-          byProduct[e.productId] += (e.qty || 0);
-        });
-        Object.keys(byProduct).forEach(function(pid) {
-          var product = products.find(function(p) { return p.id === pid; });
-          if (!product) return;
-          var min = product.alertQtyMin || 0;
-          if (min <= 0) return;
-          var total = byProduct[pid];
-          if (total <= min) {
-            rows.push({
-              sector:   sector.name,
-              product:  product.name,
-              category: product.category === 'drug' ? 'Médicament' : 'DM',
-              lot:      '',
-              expiry:   '',
-              qty:      total,
-              unit:     product.unit || 'unité',
-              qtyMin:   min
-            });
-          }
-        });
-        return;
-      }
-
-      /* Modes péremption : travailler lot par lot */
-      stock.forEach(function(e) {
-        if (!e.expiry) return;
-        var include = false;
-        if (mode === 'expired')   include = e.expiry <= todayStr;
-        if (mode === 'expiry_m1') include = e.expiry > todayStr && e.expiry <= limitStr;
-        if (mode === 'expiry_m3') include = e.expiry > todayStr && e.expiry <= limitStr;
-
-        if (!include) return;
-
-        var product = products.find(function(p) { return p.id === e.productId; });
-        rows.push({
-          sector:   sector.name,
-          product:  product ? product.name : '(Produit inconnu)',
-          category: product ? (product.category === 'drug' ? 'Médicament' : 'DM') : '',
-          lot:      e.lot   || '',
-          expiry:   e.expiry ? displayDate(e.expiry) : '',
-          qty:      e.qty   || 0,
-          unit:     product ? (product.unit || 'unité') : 'unité',
-          qtyMin:   ''
-        });
-      });
-    });
-
-    /* Trier par péremption croissante puis secteur */
-    rows.sort(function(a, b) {
-      if (a.expiry && b.expiry) return a.expiry < b.expiry ? -1 : 1;
-      if (!a.expiry && b.expiry) return 1;
-      if (a.expiry && !b.expiry) return -1;
-      return a.sector.localeCompare(b.sector);
-    });
-
-    return rows;
-  }
 
   /* ── Rendu HTML d'une liste dans la modale ── */
-  function _renderReportRows(rows, mode) {
-    if (rows.length === 0) {
-      return '<div class="empty-state" style="padding:24px 0">'
-        + '<div class="empty-state-icon">✅</div>'
-        + '<div class="empty-state-title">Aucun article</div>'
-        + '</div>';
-    }
-
-    var html = '<table style="width:100%;border-collapse:collapse;font-size:11px">';
-    html += '<thead><tr style="border-bottom:2px solid var(--border);text-align:left">';
-    html += '<th style="padding:4px 6px">Secteur</th>';
-    html += '<th style="padding:4px 6px">Produit</th>';
-    if (mode !== 'low_stock') {
-      html += '<th style="padding:4px 6px">Lot</th>';
-      html += '<th style="padding:4px 6px">Expiration</th>';
-    }
-    html += '<th style="padding:4px 6px;text-align:right">Qté</th>';
-    if (mode === 'low_stock') {
-      html += '<th style="padding:4px 6px;text-align:right">Min</th>';
-    }
-    html += '</tr></thead><tbody>';
-
-    rows.forEach(function(r, i) {
-      var bg = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.03)';
-      html += '<tr style="background:' + bg + '">';
-      html += '<td style="padding:4px 6px;color:var(--text2)">' + escH(r.sector) + '</td>';
-      html += '<td style="padding:4px 6px;font-weight:500">' + escH(r.product) + '</td>';
-      if (mode !== 'low_stock') {
-        html += '<td style="padding:4px 6px;font-family:monospace;color:var(--text3)">' + escH(r.lot) + '</td>';
-        html += '<td style="padding:4px 6px;color:var(--danger)">' + escH(r.expiry) + '</td>';
-      }
-      html += '<td style="padding:4px 6px;text-align:right;font-weight:600">' + r.qty + ' ' + escH(r.unit) + '</td>';
-      if (mode === 'low_stock') {
-        html += '<td style="padding:4px 6px;text-align:right;color:var(--text3)">' + r.qtyMin + '</td>';
-      }
-      html += '</tr>';
-    });
-
-    html += '</tbody></table>';
-    return html;
-  }
 
   /* ── Export CSV d'une extraction ── */
-  function _exportCSV(rows, mode) {
-    var header;
-    if (mode === 'low_stock') {
-      header = ['Secteur', 'Produit', 'Catégorie', 'Quantité', 'Unité', 'Seuil min'];
-    } else {
-      header = ['Secteur', 'Produit', 'Catégorie', 'Lot', 'Expiration', 'Quantité', 'Unité'];
-    }
-
-    var data = [header].concat(rows.map(function(r) {
-      if (mode === 'low_stock') {
-        return [r.sector, r.product, r.category, r.qty, r.unit, r.qtyMin];
-      }
-      return [r.sector, r.product, r.category, r.lot, r.expiry, r.qty, r.unit];
-    }));
-
-    var labels = {
-      expired:   'perimés',
-      expiry_m1: 'expire_M+1',
-      expiry_m3: 'expire_M+3',
-      low_stock: 'stock_bas'
-    };
-    _downloadCSV('stock_rapport_' + (labels[mode] || mode) + '_' + fmtTs() + '.csv', data);
-    showToast('CSV téléchargé (' + rows.length + ' lignes)', 'success');
-  }
 
   /* ── Ouvrir la modale rapport ── */
-  function openReportModal() {
-    var sectors = storeGetSectors().filter(function(s) { return s.id !== 'global'; });
-    var currentSectorId = typeof getCurrentSectorId === 'function' ? getCurrentSectorId() : 'all';
 
-    /* Sélecteur de secteur */
-    var sectorOptions = '<option value="all">Tous les secteurs</option>';
-    sectors.forEach(function(s) {
-      var sel = s.id === currentSectorId ? ' selected' : '';
-      sectorOptions += '<option value="' + escH(s.id) + '"' + sel + '>' + escH(s.name) + '</option>';
-    });
-
-    var bodyHtml = ''
-      + '<div class="form-group" style="margin-bottom:14px">'
-      + '<label>Secteur</label>'
-      + '<select id="report-sector-filter" style="margin-bottom:0">' + sectorOptions + '</select>'
-      + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">'
-      + _reportBtn('expired',   '🔴', 'Périmés',       'Lots dont la date est dépassée', 'btn-ghost')
-      + _reportBtn('expiry_m1', '🟠', 'Expire M+1',    'Lots expirant ce mois-ci ou le suivant', 'btn-ghost')
-      + _reportBtn('expiry_m3', '🟡', 'Expire M+3',    'Lots expirant dans les 3 prochains mois', 'btn-ghost')
-      + _reportBtn('low_stock', '📉', 'Stock bas',     'Produits sous le seuil d\'alerte', 'btn-ghost')
-      + '</div>'
-      + '<div id="report-result" style="max-height:45vh;overflow-y:auto;border-top:1px solid var(--border);padding-top:12px">'
-      + '<div style="text-align:center;color:var(--text3);font-size:11px;padding:16px">Sélectionnez une extraction ci-dessus</div>'
-      + '</div>';
-
-    var footerHtml = ''
-      + '<button class="btn btn-secondary" data-close-modal="modal-report">Fermer</button>'
-      + '<button class="btn btn-primary" id="btn-report-export" style="display:none">⬇ CSV</button>';
-
-    var modal = createModal('modal-report', '📊 Extractions', bodyHtml, footerHtml, 'md');
-    if (!modal) return;
-
-    var _currentMode = null;
-    var _currentRows = [];
-
-    function _runReport(mode) {
-      _currentMode = mode;
-      var sectorFilter = document.getElementById('report-sector-filter');
-      var sid = sectorFilter ? sectorFilter.value : 'all';
-      _currentRows = _buildReport(sid, mode);
-      var resultEl = document.getElementById('report-result');
-      if (resultEl) resultEl.innerHTML = _renderReportRows(_currentRows, mode);
-      var btnExp = document.getElementById('btn-report-export');
-      if (btnExp) {
-        btnExp.style.display = _currentRows.length > 0 ? 'inline-flex' : 'none';
-      }
-    }
-
-    modal.addEventListener('click', function(e) {
-      var btn = e.target.closest('[data-report-mode]');
-      if (btn) {
-        /* Mise en évidence du bouton actif */
-        modal.querySelectorAll('[data-report-mode]').forEach(function(b) {
-          b.classList.remove('btn-primary');
-          b.classList.add('btn-ghost');
-        });
-        btn.classList.remove('btn-ghost');
-        btn.classList.add('btn-primary');
-        _runReport(btn.dataset.reportMode);
-        return;
-      }
-      if (e.target.id === 'btn-report-export' && _currentMode) {
-        _exportCSV(_currentRows, _currentMode);
-      }
-    });
-
-    /* Relancer si changement de filtre secteur */
-    var selEl = document.getElementById('report-sector-filter');
-    if (selEl) {
-      selEl.addEventListener('change', function() {
-        if (_currentMode) _runReport(_currentMode);
-      });
-    }
-  }
-
-  function _reportBtn(mode, icon, label, hint, cls) {
-    return '<button class="btn ' + cls + '" data-report-mode="' + mode + '"'
-      + ' style="flex-direction:column;gap:4px;padding:10px 6px;height:auto;text-align:center"'
-      + ' title="' + escH(hint) + '">'
-      + '<span style="font-size:18px">' + icon + '</span>'
-      + '<span style="font-size:11px;font-weight:600">' + escH(label) + '</span>'
-      + '</button>';
-  }
 
   /* ── Expose ── */
-  window.openReportModal = openReportModal;
 
 }());
 
@@ -5608,8 +6241,18 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   };
 
   /* Lire / ecrire le mode */
-  function getMode()       { return storeGetSetting('deployMode') || null; }
-  function setMode(mode)   { storeSetSetting('deployMode', mode); fsScheduleSave(); }
+  var LS_DEPLOY_KEY = 'stock_deploy_mode';
+  function getMode() {
+    /* localStorage d'abord (disponible avant chargement du fichier) */
+    var ls = localStorage.getItem(LS_DEPLOY_KEY);
+    if (ls) return ls;
+    return storeGetSetting('deployMode') || null;
+  }
+  function setMode(mode) {
+    localStorage.setItem(LS_DEPLOY_KEY, mode);
+    storeSetSetting('deployMode', mode);
+    fsScheduleSave();
+  }
 
   /* ── Modale de choix du mode ── */
   function openDeployModal(onClose) {
@@ -5873,7 +6516,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       if (!existing) {
         if (!p.id) p.id = genId();
         if (p.pkgQty      === undefined) p.pkgQty      = 0;
-        if (p.alertQtyMin === undefined) p.alertQtyMin = 0;
+        if (p.alertQtyMin     === undefined) p.alertQtyMin     = 0;
+      if (p.alertQtyOptimal === undefined) p.alertQtyOptimal = 0;
         storeUpsertProduct(p);
         prodAdded++;
       } else if ((p._updatedAt || 0) > (existing._updatedAt || 0)) {
@@ -6017,6 +6661,24 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   'use strict';
 
   /* ── Rendu global de l'app (appelé après chargement du fichier) ── */
+
+  /* Met à jour le header avec le nom et logo de l'application */
+  function _updateHeaderBrand() {
+    var settings = storeGetSettings();
+    var nameEl   = document.getElementById('header-appname');
+    var logoEl   = document.getElementById('header-logo');
+    if (nameEl) nameEl.textContent = settings.unitName || 'STOCK';
+    if (logoEl) {
+      if (settings.appLogo) {
+        logoEl.src = settings.appLogo;
+        logoEl.style.display = '';
+      } else {
+        logoEl.style.display = 'none';
+      }
+    }
+  }
+  window._updateHeaderBrand = _updateHeaderBrand;
+
   function renderApp() {
     window.dbg('renderApp()', 'ok');
     renderSectorNav();
@@ -6051,7 +6713,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     var btnExtract = document.getElementById('btn-extract');
     if (btnExtract) {
       btnExtract.addEventListener('click', function() {
-        window.openReportModal();
+        switchView('report');
+        if (window.renderReport) window.renderReport();
       });
     }
 
@@ -6147,39 +6810,16 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   };
 
   function injectManifest() {
-    /* data: URI requis — blob: URL refusé par Chrome sur HTTPS pour les manifests */
-    var json = JSON.stringify(manifest);
-    var url  = 'data:application/manifest+json,' + encodeURIComponent(json);
+    /* blob: URI — fonctionne sur localhost et HTTP Server Android */
+    var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    var url  = URL.createObjectURL(blob);
     var link = document.getElementById('pwa-manifest');
     if (link) link.href = url;
     var icon = document.getElementById('pwa-icon');
     if (icon) icon.href = ICON_URL;
   }
 
-  /* ── Service Worker inline (cache-first, offline) ── */
-  var SW_SOURCE = [
-    'var CACHE = "stock-' + SCHEMA_VERSION + '";',
-    'var URLS  = ["./"];',
-    'self.addEventListener("install", function(e) {',
-    '  e.waitUntil(caches.open(CACHE).then(function(c) { return c.addAll(URLS); }));',
-    '  self.skipWaiting();',
-    '});',
-    'self.addEventListener("activate", function(e) {',
-    '  e.waitUntil(caches.keys().then(function(keys) {',
-    '    return Promise.all(keys.filter(function(k){return k!==CACHE;}).map(function(k){return caches.delete(k);}));',
-    '  }));',
-    '  self.clients.claim();',
-    '});',
-    'self.addEventListener("fetch", function(e) {',
-    '  e.respondWith(caches.match(e.request).then(function(r) {',
-    '    return r || fetch(e.request).then(function(res) {',
-    '      var clone = res.clone();',
-    '      caches.open(CACHE).then(function(c) { c.put(e.request, clone); });',
-    '      return res;',
-    '    }).catch(function() { return r; });',
-    '  }));',
-    '});'
-  ].join('\n');
+  /* SW chargé depuis ./sw.js (fichier séparé) */
 
   function registerSW() {
     if (!('serviceWorker' in navigator)) {
@@ -6187,8 +6827,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       return;
     }
     try {
-      var blob = new Blob([SW_SOURCE], { type: 'application/javascript' });
-      var swUrl = URL.createObjectURL(blob);
+      /* sw.js séparé — version injectée dans l'URL pour forcer le rechargement */
+      var swUrl = './sw.js?v=' + SCHEMA_VERSION;
       navigator.serviceWorker.register(swUrl, { scope: './' })
         .then(function(reg) {
           window.dbg('SW enregistré — scope: ' + reg.scope, 'ok');
