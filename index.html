@@ -946,6 +946,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   </div>
   <div class="scan-status-bar" id="scan-video-status"></div>
   <div class="scan-actions">
+    <button class="btn btn-ghost" id="btn-scan-torch"  style="background:rgba(0,0,0,.5);color:#fff;border-color:rgba(255,255,255,.3)">🔦</button>
     <button class="btn btn-ghost" id="btn-scan-manual" style="background:rgba(0,0,0,.5);color:#fff;border-color:rgba(255,255,255,.3)">⌨ Saisie manuelle</button>
     <button class="btn btn-ghost" id="btn-scan-close"  style="background:rgba(0,0,0,.5);color:#fff;border-color:rgba(255,255,255,.3)">✕ Fermer</button>
   </div>
@@ -4265,6 +4266,9 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   var _detectBusy   = false;  /* verrou : une détection à la fois */
   var _scanCanvas   = null;   /* canvas réutilisé entre frames */
   var _scanCtx      = null;
+  var _scanTrack    = null;   /* VideoTrack actif (torche, focus) */
+  var _torchOn      = false;
+  var _lastDetect   = 0;      /* timestamp dernière détection (throttle) */
 
   /* BarcodeDetector instancié une seule fois */
   var _nativeDetector = null;
@@ -4291,9 +4295,11 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
     var constraints = {
       video: {
-        facingMode: { ideal: 'environment' },
-        width:  { ideal: 1280, min: 640 },
-        height: { ideal: 720,  min: 480 }
+        facingMode:  { ideal: 'environment' },
+        width:       { ideal: 1920, min: 1280 },
+        height:      { ideal: 1080, min: 720  },
+        focusMode:   { ideal: 'continuous' },
+        zoom:        { ideal: 1 }
       }
     };
 
@@ -4309,6 +4315,12 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
           var s = track ? track.getSettings() : {};
           _setVideoStatus((s.width || '?') + '×' + (s.height || '?'));
           setTimeout(function() { _setVideoStatus(''); }, 2000);
+          /* Forcer autofocus continu si supporté */
+          if (track && track.applyConstraints) {
+            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] })
+              .catch(function() {}); /* ignoré si non supporté */
+          }
+          _scanTrack = track; /* garder la ref pour la torche */
           /* Canvas réutilisable aux dimensions exactes de la vidéo */
           _scanCanvas = document.createElement('canvas');
           _scanCanvas.width  = video.videoWidth;
@@ -4327,8 +4339,17 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
     var btnClose  = document.getElementById('btn-scan-close');
     var btnManual = document.getElementById('btn-scan-manual');
+    var btnTorch  = document.getElementById('btn-scan-torch');
     if (btnClose)  btnClose.onclick  = function() { _closeVideoScan(); };
     if (btnManual) btnManual.onclick = function() { _closeVideoScan(); openManualEntryModal(null); };
+    if (btnTorch)  btnTorch.onclick  = function() {
+      if (!_scanTrack) return;
+      _torchOn = !_torchOn;
+      _scanTrack.applyConstraints({ advanced: [{ torch: _torchOn }] })
+        .catch(function() { showToast('Torche non disponible', 'warn'); _torchOn = false; });
+      btnTorch.style.color = _torchOn ? '#FFD700' : '#fff';
+      btnTorch.style.borderColor = _torchOn ? '#FFD700' : 'rgba(255,255,255,.3)';
+    };
   }
 
   /* ── Arrêter le stream et fermer la modale ── */
@@ -4337,6 +4358,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     _detectBusy = false;
     _scanCanvas = null;
     _scanCtx    = null;
+    _scanTrack  = null;
+    _torchOn    = false;
     if (_videoStream) {
       _videoStream.getTracks().forEach(function(t) { t.stop(); });
       _videoStream = null;
@@ -4362,6 +4385,10 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       if (!_videoStream) return;  /* stream coupé → stop */
       _rafHandle = requestAnimationFrame(_loop);
       if (_detectBusy || !_scanCanvas || video.readyState < 2) return;
+      /* Limiter à ~15fps pour laisser l'autofocus stabiliser */
+      var now = Date.now();
+      if (now - (_lastDetect || 0) < 66) return;
+      _lastDetect = now;
       _detectBusy = true;
 
       _scanCtx.drawImage(video, 0, 0);
