@@ -4318,11 +4318,15 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     modal.classList.add('open');
     _setVideoStatus('Démarrage caméra…');
 
+    /* Délai 300ms — laisse Android libérer complètement le hardware caméra */
+    setTimeout(function() {
+
     var constraints = {
       video: {
         facingMode:  { ideal: 'environment' },
         width:       { ideal: 1920 },
-        height:      { ideal: 1080 }
+        height:      { ideal: 1080 },
+        advanced:    [{ torch: false }] /* force accès hardware complet dès le départ */
       }
     };
 
@@ -4360,6 +4364,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         openManualEntryModal(null);
       });
 
+    }, 300); /* fin setTimeout libération hardware */
+
     var btnClose  = document.getElementById('btn-scan-close');
     var btnManual = document.getElementById('btn-scan-manual');
     var btnTorch  = document.getElementById('btn-scan-torch');
@@ -4383,13 +4389,14 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     _scanCtx    = null;
     _scanTrack  = null;
     _torchOn    = false;
+    var modal = document.getElementById('modal-video-scan');
+    var video = document.getElementById('scan-video');
+    /* srcObject=null AVANT t.stop() — libère le verrou hardware Android */
+    if (video) { video.pause(); video.srcObject = null; video.load(); }
     if (_videoStream) {
       _videoStream.getTracks().forEach(function(t) { t.stop(); });
       _videoStream = null;
     }
-    var modal = document.getElementById('modal-video-scan');
-    var video = document.getElementById('scan-video');
-    if (video) video.srcObject = null;
     if (modal) modal.classList.remove('open');
   }
 
