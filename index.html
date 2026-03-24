@@ -946,7 +946,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   </div>
   <div class="scan-status-bar" id="scan-video-status"></div>
   <div class="scan-actions">
-    <button class="btn btn-ghost" id="btn-scan-torch"  style="background:rgba(0,0,0,.5);color:#fff;border-color:rgba(255,255,255,.3)">🔦</button>
     <button class="btn btn-ghost" id="btn-scan-manual" style="background:rgba(0,0,0,.5);color:#fff;border-color:rgba(255,255,255,.3)">⌨ Saisie manuelle</button>
     <button class="btn btn-ghost" id="btn-scan-close"  style="background:rgba(0,0,0,.5);color:#fff;border-color:rgba(255,255,255,.3)">✕ Fermer</button>
   </div>
@@ -1581,15 +1580,24 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   function deleteStockEntry(id) {
     var s = getStockById(id);
     if (!s) { _state._updatedAt = Date.now(); return; }
-    /* Vérifier si le produit a un seuil bas > 0 */
     var product = _state.products.find(function(p) { return p.id === s.productId; });
     var hasMin  = product && (product.alertQtyMin || 0) > 0;
     if (hasMin) {
-      /* Conserver la ligne avec qty=0 pour signaler la rupture */
-      s.qty        = 0;
-      s._updatedAt = Date.now();
+      /* Vérifier si d'autres lots existent pour ce produit */
+      var otherLots = _state.stock.filter(function(e) {
+        return e.productId === s.productId && e.id !== id
+          && !e._deletedAt && e.qty > 0;
+      });
+      if (otherLots.length > 0) {
+        /* Autres lots disponibles → supprimer cette ligne vide */
+        s._deletedAt = Date.now();
+        s._updatedAt = Date.now();
+      } else {
+        /* Dernier lot → conserver avec qty=0 pour signaler la rupture */
+        s.qty        = 0;
+        s._updatedAt = Date.now();
+      }
     } else {
-      /* Suppression normale */
       s._deletedAt = Date.now();
       s._updatedAt = Date.now();
     }
@@ -2683,6 +2691,9 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     if (alertCount > 0 && !_searchQuery) html += '<span class="badge badge-danger">' + alertCount + ' alerte' + (alertCount > 1 ? 's' : '') + '</span>';
     html += '</div>';
 
+    /* Appliquer le filtre recherche */
+    var groups = filteredGroups;
+
     var locations = sector.locations || [];
     if (locations.length > 0) {
       locations.forEach(function(loc) {
@@ -2800,14 +2811,22 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     return Object.values(map).map(function(g) {
       g.product  = storeGetProductById(g.productId);
       var pkgQty = g.product ? (g.product.pkgQty || 0) : 0;
-      /* totalQty : boîtes en mode box, unités en mode unit */
-      g.totalQty = g.entries.reduce(function(sum, e) { return sum + (e.qty || 0); }, 0);
-      /* totalUnitsReal : toujours en unités pour les calculs d'alerte */
-      g.totalUnitsReal = isBox
-        ? g.entries.reduce(function(sum, e) {
-            return sum + (e.partial ? (e.qty || 0) : (e.qty || 0) * (pkgQty || 1));
-          }, 0)
-        : g.totalQty;
+      /* totalQty : en mode box = boîtes complètes + fractions pour partielles
+         Les entrées partial:true ont qty en UNITÉS, pas en boîtes */
+      if (isBox) {
+        /* Compter boîtes complètes séparément des partielles */
+        var fullBoxes   = g.entries.filter(function(e) { return !e.partial; })
+                           .reduce(function(s, e) { return s + (e.qty || 0); }, 0);
+        var partialUnits = g.entries.filter(function(e) { return e.partial; })
+                           .reduce(function(s, e) { return s + (e.qty || 0); }, 0);
+        g.totalQty      = fullBoxes; /* affiché en boîtes */
+        g.partialUnits  = partialUnits; /* unités partielles séparées */
+        g.totalUnitsReal = fullBoxes * (pkgQty || 1) + partialUnits;
+      } else {
+        g.totalQty       = g.entries.reduce(function(sum, e) { return sum + (e.qty || 0); }, 0);
+        g.partialUnits   = 0;
+        g.totalUnitsReal = g.totalQty;
+      }
       return g;
     });
   }
@@ -2869,10 +2888,14 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     html += '</div>';
     html += '<div style="font-size:10px;color:var(--text2);margin-top:2px">';
     if (mode === 'box' && pkgQtyRow > 0) {
-      var totalU = group.totalQty * pkgQtyRow;
+      var totalU = group.totalQty * pkgQtyRow + (group.partialUnits || 0);
       html += group.totalQty + ' ' + pluralUnit('boite', group.totalQty)
-        + ' de ' + pkgQtyRow + ' ' + escH(pluralUnit(unit, pkgQtyRow))
-        + ' <span style="color:var(--text3);font-size:9px">(total : ' + totalU + ' ' + escH(pluralUnit(unit, totalU)) + ')</span>';
+        + ' de ' + pkgQtyRow + ' ' + escH(pluralUnit(unit, pkgQtyRow));
+      if (group.partialUnits > 0) {
+        html += ' + <span style="color:var(--warn);font-size:10px">' + group.partialUnits
+          + ' ' + escH(pluralUnit(unit, group.partialUnits)) + ' (entamée)</span>';
+      }
+      html += ' <span style="color:var(--text3);font-size:9px">(total : ' + totalU + ' ' + escH(pluralUnit(unit, totalU)) + ')</span>';
     } else if (mode === 'box') {
       html += group.totalQty + ' ' + pluralUnit('boite', group.totalQty);
     } else {
@@ -4264,11 +4287,9 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   var _videoStream  = null;   /* MediaStream actif */
   var _rafHandle    = null;   /* requestAnimationFrame handle */
   var _detectBusy   = false;  /* verrou : une détection à la fois */
+  var _lastDetect   = 0;      /* throttle 15fps */
   var _scanCanvas   = null;   /* canvas réutilisé entre frames */
   var _scanCtx      = null;
-  var _scanTrack    = null;   /* VideoTrack actif (torche, focus) */
-  var _torchOn      = false;
-  var _lastDetect   = 0;      /* timestamp dernière détection (throttle) */
 
   /* BarcodeDetector instancié une seule fois */
   var _nativeDetector = null;
@@ -4295,11 +4316,9 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
     var constraints = {
       video: {
-        facingMode:  { ideal: 'environment' },
-        width:       { ideal: 1920, min: 1280 },
-        height:      { ideal: 1080, min: 720  },
-        focusMode:   { ideal: 'continuous' },
-        zoom:        { ideal: 1 }
+        facingMode: { ideal: 'environment' },
+        width:  { ideal: 1280, min: 640 },
+        height: { ideal: 720,  min: 480 }
       }
     };
 
@@ -4310,17 +4329,13 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       .then(function(stream) {
         _videoStream = stream;
         video.srcObject = stream;
+        video.play();
         video.addEventListener('loadedmetadata', function() {
           var track = stream.getVideoTracks()[0];
           var s = track ? track.getSettings() : {};
           _setVideoStatus((s.width || '?') + '×' + (s.height || '?'));
           setTimeout(function() { _setVideoStatus(''); }, 2000);
-          /* Forcer autofocus continu si supporté */
-          if (track && track.applyConstraints) {
-            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] })
-              .catch(function() {}); /* ignoré si non supporté */
-          }
-          _scanTrack = track; /* garder la ref pour la torche */
+
           /* Canvas réutilisable aux dimensions exactes de la vidéo */
           _scanCanvas = document.createElement('canvas');
           _scanCanvas.width  = video.videoWidth;
@@ -4328,7 +4343,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
           _scanCtx = _scanCanvas.getContext('2d', { willReadFrequently: true });
           _startRAFLoop();
         }, { once: true });
-        video.play();
       })
       .catch(function(err) {
         window.dbg('getUserMedia erreur: ' + err.message, 'warn');
@@ -4339,17 +4353,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
     var btnClose  = document.getElementById('btn-scan-close');
     var btnManual = document.getElementById('btn-scan-manual');
-    var btnTorch  = document.getElementById('btn-scan-torch');
     if (btnClose)  btnClose.onclick  = function() { _closeVideoScan(); };
     if (btnManual) btnManual.onclick = function() { _closeVideoScan(); openManualEntryModal(null); };
-    if (btnTorch)  btnTorch.onclick  = function() {
-      if (!_scanTrack) return;
-      _torchOn = !_torchOn;
-      _scanTrack.applyConstraints({ advanced: [{ torch: _torchOn }] })
-        .catch(function() { showToast('Torche non disponible', 'warn'); _torchOn = false; });
-      btnTorch.style.color = _torchOn ? '#FFD700' : '#fff';
-      btnTorch.style.borderColor = _torchOn ? '#FFD700' : 'rgba(255,255,255,.3)';
-    };
   }
 
   /* ── Arrêter le stream et fermer la modale ── */
@@ -4358,8 +4363,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     _detectBusy = false;
     _scanCanvas = null;
     _scanCtx    = null;
-    _scanTrack  = null;
-    _torchOn    = false;
     if (_videoStream) {
       _videoStream.getTracks().forEach(function(t) { t.stop(); });
       _videoStream = null;
@@ -4382,13 +4385,12 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     }
 
     function _loop() {
-      if (!_videoStream) return;  /* stream coupé → stop */
+      if (!_videoStream) return;
       _rafHandle = requestAnimationFrame(_loop);
       if (_detectBusy || !_scanCanvas || video.readyState < 2) return;
-      /* Limiter à ~15fps pour laisser l'autofocus stabiliser */
-      var now = Date.now();
-      if (now - (_lastDetect || 0) < 66) return;
-      _lastDetect = now;
+      var _now = Date.now();
+      if (_now - _lastDetect < 66) return;
+      _lastDetect = _now;
       _detectBusy = true;
 
       _scanCtx.drawImage(video, 0, 0);
@@ -4595,13 +4597,34 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         + 'Type : <strong>' + subtypeLabel + '</strong></div>';
     }
 
-    /* Pour TRANSFER : afficher la destination déjà choisie (pas de re-sélection) */
+    /* Pour TRANSFER : destination + emplacement si secteur dest a des locations */
     if (_scanContext === 'transfer' && _scanTarget) {
       var destSector = storeGetSectorById(_scanTarget);
       var destLabel  = destSector ? destSector.name : _scanTarget;
       var modeLabel  = _scanSubtype === 'partial' ? ' — unités' : '';
       bodyHtml += '<div style="font-size:11px;color:var(--text2);margin-top:8px">'
         + 'Vers : <strong>' + escH(destLabel) + '</strong>' + escH(modeLabel) + '</div>';
+      /* Sélecteur emplacement destination si le secteur en a */
+      if (destSector) {
+        var destLocs = destSector.locations || [];
+        if (destLocs.length > 0) {
+          var destLocOpts = '<option value="">— Sans emplacement —</option>';
+          destLocs.forEach(function(loc) {
+            var subs = loc.sublocs || [];
+            if (subs.length > 0) {
+              subs.forEach(function(sub) {
+                destLocOpts += '<option value="' + escH(loc.id) + '/' + escH(sub.id) + '">'
+                  + escH(loc.name) + ' › ' + escH(sub.name) + '</option>';
+              });
+            }
+            destLocOpts += '<option value="' + escH(loc.id) + '/">' + escH(loc.name) + '</option>';
+          });
+          bodyHtml += '<div class="form-group" style="margin-top:8px">'
+            + '<label>Emplacement destination</label>'
+            + '<select id="modal-qty-dest-location">' + destLocOpts + '</select>'
+            + '</div>';
+        }
+      }
     }
 
     /* ADD : sélecteur emplacement si le secteur en a */
@@ -4659,8 +4682,13 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     /* Subtype déjà défini avant le scan via openActionModal */
     var subtype = _scanSubtype;
 
-    /* Secteur destination : _scanTarget (défini avant le scan) — plus de select dans la modale */
     var targetSectorId = _scanTarget;
+    /* Emplacement destination (transfert) */
+    var destLocInput = document.getElementById('modal-qty-dest-location');
+    var destLocRaw   = destLocInput ? destLocInput.value : '';
+    var destLocParts = destLocRaw ? destLocRaw.split('/') : [];
+    var destLocation = destLocParts[0] ? { locId: destLocParts[0], sublocId: destLocParts[1] || '' } : null;
+    if (destLocation) params = Object.assign({}, params, { destLocation: destLocation });
 
     /* Emplacement choisi (ADD uniquement) */
     var locInput  = document.getElementById('modal-qty-location');
@@ -5098,7 +5126,9 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         _applyIn(sectorId, product, gs1, qty, location);
         ok = true;
       } else if (context === 'out') {
-        ok = _applyOut(sectorId, product, gs1, qty, subtype, { outMode: outMode });
+        var _outRes = _applyOut(sectorId, product, gs1, qty, subtype, { outMode: outMode });
+        if (_outRes === 'pending') return; /* modale FEFO a pris le relais */
+        ok = _outRes;
       } else if (context === 'transfer') {
         if (!targetSectorId) { showToast('Secteur destination manquant', 'danger'); return; }
         ok = _applyTransfer(sectorId, targetSectorId, product, gs1, qty, params);
@@ -6934,13 +6964,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     }
 
     /* Bouton debug */
-    var btnDebug = document.getElementById('btn-debug');
-    if (btnDebug) {
-      btnDebug.addEventListener('click', function() {
-        var panel = document.getElementById('debug-panel');
-        if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-      });
-    }
 
     /* Bouton rapports -> ReportModule */
     var btnExtract = document.getElementById('btn-extract');
