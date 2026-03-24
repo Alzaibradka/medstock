@@ -946,6 +946,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   </div>
   <div class="scan-status-bar" id="scan-video-status"></div>
   <div class="scan-actions">
+    <button class="btn btn-ghost" id="btn-scan-torch" style="background:rgba(0,0,0,.5);color:#fff;border-color:rgba(255,255,255,.3)">🔦</button>
     <button class="btn btn-ghost" id="btn-scan-manual" style="background:rgba(0,0,0,.5);color:#fff;border-color:rgba(255,255,255,.3)">⌨ Saisie manuelle</button>
     <button class="btn btn-ghost" id="btn-scan-close"  style="background:rgba(0,0,0,.5);color:#fff;border-color:rgba(255,255,255,.3)">✕ Fermer</button>
   </div>
@@ -4288,6 +4289,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   var _rafHandle    = null;   /* requestAnimationFrame handle */
   var _detectBusy   = false;  /* verrou : une détection à la fois */
   var _lastDetect   = 0;      /* throttle 15fps */
+  var _scanTrack    = null;
+  var _torchOn      = false;
   var _scanCanvas   = null;   /* canvas réutilisé entre frames */
   var _scanCtx      = null;
 
@@ -4341,6 +4344,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
           _scanCanvas.width  = video.videoWidth;
           _scanCanvas.height = video.videoHeight;
           _scanCtx = _scanCanvas.getContext('2d', { willReadFrequently: true });
+          _scanTrack = stream.getVideoTracks()[0];
           _startRAFLoop();
         }, { once: true });
       })
@@ -4353,8 +4357,17 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
     var btnClose  = document.getElementById('btn-scan-close');
     var btnManual = document.getElementById('btn-scan-manual');
+    var btnTorch  = document.getElementById('btn-scan-torch');
     if (btnClose)  btnClose.onclick  = function() { _closeVideoScan(); };
     if (btnManual) btnManual.onclick = function() { _closeVideoScan(); openManualEntryModal(null); };
+    if (btnTorch)  btnTorch.onclick  = function() {
+      if (!_scanTrack) { showToast('Track non disponible', 'warn'); return; }
+      _torchOn = !_torchOn;
+      _scanTrack.applyConstraints({ advanced: [{ torch: _torchOn }] })
+        .catch(function() { showToast('Flash non disponible', 'warn'); _torchOn = false; });
+      btnTorch.style.color = _torchOn ? '#FFD700' : '#fff';
+      btnTorch.style.borderColor = _torchOn ? '#FFD700' : 'rgba(255,255,255,.3)';
+    };
   }
 
   /* ── Arrêter le stream et fermer la modale ── */
@@ -4363,6 +4376,8 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     _detectBusy = false;
     _scanCanvas = null;
     _scanCtx    = null;
+    _scanTrack  = null;
+    _torchOn    = false;
     if (_videoStream) {
       _videoStream.getTracks().forEach(function(t) { t.stop(); });
       _videoStream = null;
