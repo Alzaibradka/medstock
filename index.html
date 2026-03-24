@@ -4320,9 +4320,9 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
 
     var constraints = {
       video: {
-        facingMode: { ideal: 'environment' },
-        width:  { ideal: 1280, min: 640 },
-        height: { ideal: 720,  min: 480 }
+        facingMode:  { ideal: 'environment' },
+        width:       { ideal: 1920 },
+        height:      { ideal: 1080 }
       }
     };
 
@@ -4339,13 +4339,17 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
           var s = track ? track.getSettings() : {};
           _setVideoStatus((s.width || '?') + '×' + (s.height || '?'));
           setTimeout(function() { _setVideoStatus(''); }, 2000);
-
+          /* Autofocus continu */
+          if (track && track.applyConstraints) {
+            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] })
+              .catch(function() {});
+          }
+          _scanTrack = track;
           /* Canvas réutilisable aux dimensions exactes de la vidéo */
           _scanCanvas = document.createElement('canvas');
           _scanCanvas.width  = video.videoWidth;
           _scanCanvas.height = video.videoHeight;
           _scanCtx = _scanCanvas.getContext('2d', { willReadFrequently: true });
-          _scanTrack = stream.getVideoTracks()[0];
           _startRAFLoop();
         }, { once: true });
       })
@@ -4405,7 +4409,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       _rafHandle = requestAnimationFrame(_loop);
       if (_detectBusy || !_scanCanvas || video.readyState < 2) return;
       var _now = Date.now();
-      if (_now - _lastDetect < 66) return;
+      if (_now - _lastDetect < 66) return; /* 15fps */
       _lastDetect = _now;
       _detectBusy = true;
 
