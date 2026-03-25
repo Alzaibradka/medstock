@@ -947,7 +947,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   </div>
   <div class="scan-status-bar" id="scan-video-status"></div>
   <div class="scan-actions">
-    <button class="btn btn-ghost" id="btn-scan-torch" style="background:rgba(0,0,0,.5);color:#fff;border-color:rgba(255,255,255,.3)">🔦</button>
     <button class="btn btn-ghost" id="btn-scan-manual" style="background:rgba(0,0,0,.5);color:#fff;border-color:rgba(255,255,255,.3)">⌨ Saisie manuelle</button>
     <button class="btn btn-ghost" id="btn-scan-close"  style="background:rgba(0,0,0,.5);color:#fff;border-color:rgba(255,255,255,.3)">✕ Fermer</button>
   </div>
@@ -4289,9 +4288,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   var _videoStream  = null;   /* MediaStream actif */
   var _rafHandle    = null;   /* requestAnimationFrame handle */
   var _detectBusy   = false;  /* verrou : une détection à la fois */
-  var _lastDetect   = 0;      /* throttle 15fps */
-  var _scanTrack    = null;
-  var _torchOn      = false;
   var _scanCanvas   = null;   /* canvas réutilisé entre frames */
   var _scanCtx      = null;
 
@@ -4318,15 +4314,11 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     modal.classList.add('open');
     _setVideoStatus('Démarrage caméra…');
 
-    /* Délai 300ms — laisse Android libérer complètement le hardware caméra */
-    setTimeout(function() {
-
     var constraints = {
       video: {
-        facingMode:  { ideal: 'environment' },
-        width:       { ideal: 1920 },
-        height:      { ideal: 1080 },
-        advanced:    [{ torch: false }] /* force accès hardware complet dès le départ */
+        facingMode: { ideal: 'environment' },
+        width:  { ideal: 1280, min: 640 },
+        height: { ideal: 720,  min: 480 }
       }
     };
 
@@ -4337,18 +4329,11 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       .then(function(stream) {
         _videoStream = stream;
         video.srcObject = stream;
-        video.play();
         video.addEventListener('loadedmetadata', function() {
           var track = stream.getVideoTracks()[0];
           var s = track ? track.getSettings() : {};
           _setVideoStatus((s.width || '?') + '×' + (s.height || '?'));
           setTimeout(function() { _setVideoStatus(''); }, 2000);
-          /* Autofocus continu */
-          if (track && track.applyConstraints) {
-            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] })
-              .catch(function() {});
-          }
-          _scanTrack = track;
           /* Canvas réutilisable aux dimensions exactes de la vidéo */
           _scanCanvas = document.createElement('canvas');
           _scanCanvas.width  = video.videoWidth;
@@ -4356,6 +4341,7 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
           _scanCtx = _scanCanvas.getContext('2d', { willReadFrequently: true });
           _startRAFLoop();
         }, { once: true });
+        video.play();
       })
       .catch(function(err) {
         window.dbg('getUserMedia erreur: ' + err.message, 'warn');
@@ -4364,21 +4350,10 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         openManualEntryModal(null);
       });
 
-    }, 300); /* fin setTimeout libération hardware */
-
     var btnClose  = document.getElementById('btn-scan-close');
     var btnManual = document.getElementById('btn-scan-manual');
-    var btnTorch  = document.getElementById('btn-scan-torch');
     if (btnClose)  btnClose.onclick  = function() { _closeVideoScan(); };
     if (btnManual) btnManual.onclick = function() { _closeVideoScan(); openManualEntryModal(null); };
-    if (btnTorch)  btnTorch.onclick  = function() {
-      if (!_scanTrack) { showToast('Track non disponible', 'warn'); return; }
-      _torchOn = !_torchOn;
-      _scanTrack.applyConstraints({ advanced: [{ torch: _torchOn }] })
-        .catch(function() { showToast('Flash non disponible', 'warn'); _torchOn = false; });
-      btnTorch.style.color = _torchOn ? '#FFD700' : '#fff';
-      btnTorch.style.borderColor = _torchOn ? '#FFD700' : 'rgba(255,255,255,.3)';
-    };
   }
 
   /* ── Arrêter le stream et fermer la modale ── */
@@ -4387,16 +4362,13 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     _detectBusy = false;
     _scanCanvas = null;
     _scanCtx    = null;
-    _scanTrack  = null;
-    _torchOn    = false;
-    var modal = document.getElementById('modal-video-scan');
-    var video = document.getElementById('scan-video');
-    /* srcObject=null AVANT t.stop() — libère le verrou hardware Android */
-    if (video) { video.pause(); video.srcObject = null; video.load(); }
     if (_videoStream) {
       _videoStream.getTracks().forEach(function(t) { t.stop(); });
       _videoStream = null;
     }
+    var modal = document.getElementById('modal-video-scan');
+    var video = document.getElementById('scan-video');
+    if (video) video.srcObject = null;
     if (modal) modal.classList.remove('open');
   }
 
@@ -4415,9 +4387,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       if (!_videoStream) return;
       _rafHandle = requestAnimationFrame(_loop);
       if (_detectBusy || !_scanCanvas || video.readyState < 2) return;
-      var _now = Date.now();
-      if (_now - _lastDetect < 66) return; /* 15fps */
-      _lastDetect = _now;
       _detectBusy = true;
 
       _scanCtx.drawImage(video, 0, 0);
@@ -4482,16 +4451,16 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
             fsScheduleSave();
             openQtyModal(product, gs1);
           } else {
-            openUnknownProductModal(gs1);
+            setTimeout(function() { openUnknownProductModal(gs1); }, 150);
           }
         })
         .catch(function() {
           _setVideoStatus('');
-          openUnknownProductModal(gs1);
+          setTimeout(function() { openUnknownProductModal(gs1); }, 150);
         });
     } else {
       /* Code non GS1 ou GTIN non extrait */
-      openUnknownProductModal(gs1);
+      setTimeout(function() { openUnknownProductModal(gs1); }, 150);
     }
   }
 
@@ -4553,19 +4522,27 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
           var name = item.elementPharmaceutique || item.denomination || item.nom || null;
           if (!name) return null;
 
-          /* pkgQty depuis presentation[0].libelle */
+          /* pkgQty : chercher la présentation qui correspond au CIP13 scanné */
           var pkgQty  = 0;
           var libelle = '';
-          if (item.presentation && item.presentation.length > 0) {
-            libelle = item.presentation[0].libelle || '';
-          } else if (item.presentations && item.presentations.length > 0) {
-            libelle = item.presentations[0].libelle || '';
+          var plist = item.presentation || item.presentations || [];
+          /* 1. Trouver la présentation dont le cip13 correspond */
+          var matchedPres = null;
+          for (var pi = 0; pi < plist.length; pi++) {
+            var pc = String(plist[pi].cip13 || '');
+            if (pc === gtin || pc === gtin.slice(1)) { matchedPres = plist[pi]; break; }
           }
+          /* 2. Fallback : première présentation */
+          if (!matchedPres && plist.length > 0) matchedPres = plist[0];
+          if (matchedPres) libelle = matchedPres.libelle || '';
+          /* 3. Parser le libellé : 'de N comprimé(s)' */
           if (libelle) {
-            var mStart = libelle.match(/^(\d+)\s/);
-            var mDe    = libelle.match(/\bde\s+(\d+)\b/i);
-            if (mStart) pkgQty = parseInt(mStart[1], 10);
-            else if (mDe) pkgQty = parseInt(mDe[1], 10);
+            var mDe = libelle.match(/\bde\s+(\d+)\s*(?:comprim|g\u00e9lul|cachet|ampoule|seringue|patch|suppos|sachet|dose|cp|gel)/i)
+                   || libelle.match(/\bde\s+(\d+)\b/i);
+            var allNums = libelle.match(/\d+/g) || [];
+            var maxNum  = allNums.reduce(function(m, n) { return Math.max(m, parseInt(n,10)); }, 0);
+            if (mDe) pkgQty = parseInt(mDe[1], 10);
+            else if (maxNum > 1) pkgQty = maxNum;
           }
 
           return {
@@ -4620,17 +4597,20 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
     /* Pour OUT : afficher le type déjà choisi (délivrance/destruction) */
     if (_scanContext === 'out' && _scanSubtype) {
       var subtypeLabel = _scanSubtype === 'destruction' ? '🗑 Destruction' : '💊 Délivrance';
-      bodyHtml += '<div style="font-size:11px;color:var(--text2);margin-top:8px">'
-        + 'Type : <strong>' + subtypeLabel + '</strong></div>';
+      var outModeLabel = (isBoxMode && _scanOutMode === 'partial') ? ' — unités' : (isBoxMode ? ' — boîtes entières' : '');
+      bodyHtml += '<div style="font-size:12px;font-weight:600;color:var(--accent);'
+        + 'margin-top:8px;padding:8px;background:var(--surface2);border-radius:6px;text-align:center">'
+        + subtypeLabel + escH(outModeLabel) + '</div>';
     }
 
     /* Pour TRANSFER : destination + emplacement si secteur dest a des locations */
     if (_scanContext === 'transfer' && _scanTarget) {
       var destSector = storeGetSectorById(_scanTarget);
       var destLabel  = destSector ? destSector.name : _scanTarget;
-      var modeLabel  = _scanSubtype === 'partial' ? ' — unités' : '';
-      bodyHtml += '<div style="font-size:11px;color:var(--text2);margin-top:8px">'
-        + 'Vers : <strong>' + escH(destLabel) + '</strong>' + escH(modeLabel) + '</div>';
+      var modeIcon   = _scanSubtype === 'partial' ? '💊 Unités' : '📦 Boîtes';
+      bodyHtml += '<div style="font-size:12px;font-weight:600;color:var(--accent);'
+        + 'margin-top:8px;padding:8px;background:var(--surface2);border-radius:6px;text-align:center">'
+        + modeIcon + ' → ' + escH(destLabel) + '</div>';
       /* Sélecteur emplacement destination si le secteur en a */
       if (destSector) {
         var destLocs = destSector.locations || [];
@@ -5008,14 +4988,13 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         + '<button class="btn btn-warning" id="btn-subtype-delivery"  style="padding:14px;font-size:13px">💊 Délivrance</button>'
         + '<button class="btn btn-ghost"   id="btn-subtype-destruction" style="padding:14px;font-size:13px">🗑 Destruction</button>'
         + '</div></div>';
-      /* En mode boîte, proposer délivrance en boîtes ou en unités */
       if (isBoxOut) {
         bodyHtml += '<div class="form-group" id="delivery-mode-block" style="display:none">'
           + '<label>Mode de délivrance</label>'
-          + '<select id="modal-delivery-mode">'
-          + '<option value="box">Boîtes entières</option>'
-          + '<option value="partial">Unités (boîte sécable)</option>'
-          + '</select></div>';
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+          + '<button class="btn btn-secondary" id="btn-mode-box" style="padding:12px;font-size:12px">📦 Boîtes</button>'
+          + '<button class="btn btn-secondary" id="btn-mode-partial" style="padding:12px;font-size:12px">💊 Unités</button>'
+          + '</div></div>';
       }
     }
 
@@ -5036,13 +5015,17 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
       bodyHtml += '<div class="form-group"><label>Secteur destination</label>'
         + '<select id="modal-action-target">' + opts + '</select></div>';
 
-      /* Si source en mode boîte : proposer boîtes ou unités */
+      /* Si source en mode boîte : boutons Boites / Unites */
       if (srcSector && srcSector.mode === 'box') {
-        bodyHtml += '<div class="form-group"><label>Mode de transfert</label>'
-          + '<select id="modal-transfer-mode">'
-          + '<option value="box">Boîtes entières</option>'
-          + '<option value="partial">Unités (boîte sécable)</option>'
-          + '</select></div>';
+        bodyHtml += '<div class="form-group">'
+          + '<label>Mode de transfert</label>'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+          + '<button class="btn btn-primary" id="btn-tmode-box" style="padding:12px;font-size:13px">📦 Boîtes</button>'
+          + '<button class="btn btn-ghost"   id="btn-tmode-partial" style="padding:12px;font-size:13px">💊 Unités</button>'
+          + '</div>'
+          + '<div id="tmode-hint" style="font-size:10px;color:var(--text2);margin-top:4px;text-align:center">'
+          + '📦 Transfert de boîtes entières</div>'
+          + '</div>';
       }
     }
 
@@ -5069,12 +5052,27 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         var btnX = document.getElementById('btn-subtype-destruction');
         var btnL = document.getElementById('btn-action-launch');
         if (e.target.id === 'btn-subtype-delivery') {
-          _scanSubtype = 'delivery';
-          if (btnD) { btnD.classList.add('btn-warning');    btnD.classList.remove('btn-ghost');   }
-          if (btnX) { btnX.classList.remove('btn-danger');  btnX.classList.add('btn-ghost');      }
-          if (btnL) { btnL.removeAttribute('disabled');     btnL.style.opacity = '1'; }
+          _scanSubtype = 'delivery'; _outMode = 'box';
+          if (btnD) { btnD.classList.add('btn-warning'); btnD.classList.remove('btn-ghost'); }
+          if (btnX) { btnX.classList.remove('btn-danger'); btnX.classList.add('btn-ghost'); }
+          if (btnL) { btnL.removeAttribute('disabled'); btnL.style.opacity = '1'; }
           var dmBlock = document.getElementById('delivery-mode-block');
-          if (dmBlock) dmBlock.style.display = '';
+          if (dmBlock) { dmBlock.style.display = ''; }
+          var bB = document.getElementById('btn-mode-box'), bP = document.getElementById('btn-mode-partial');
+          if (bB) { bB.classList.add('btn-primary'); bB.classList.remove('btn-secondary'); }
+          if (bP) { bP.classList.remove('btn-primary'); bP.classList.add('btn-secondary'); }
+        }
+        if (e.target.id === 'btn-mode-box') {
+          _outMode = 'box';
+          var bB2 = document.getElementById('btn-mode-box'), bP2 = document.getElementById('btn-mode-partial');
+          if (bB2) { bB2.classList.add('btn-primary'); bB2.classList.remove('btn-secondary'); }
+          if (bP2) { bP2.classList.remove('btn-primary'); bP2.classList.add('btn-secondary'); }
+        }
+        if (e.target.id === 'btn-mode-partial') {
+          _outMode = 'partial';
+          var bB3 = document.getElementById('btn-mode-box'), bP3 = document.getElementById('btn-mode-partial');
+          if (bP3) { bP3.classList.add('btn-primary'); bP3.classList.remove('btn-secondary'); }
+          if (bB3) { bB3.classList.remove('btn-primary'); bB3.classList.add('btn-secondary'); }
         }
         if (e.target.id === 'btn-subtype-destruction') {
           _scanSubtype = 'destruction';
@@ -5086,8 +5084,40 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
         }
         if (e.target.id === 'btn-action-launch') _launchFromActionModal();
       });
+    } else if (context === 'transfer') {
+      _scanSubtype = 'box';
+      modal.addEventListener('click', function(e) {
+        var btnBox     = document.getElementById('btn-tmode-box');
+        var btnPartial = document.getElementById('btn-tmode-partial');
+        var hint       = document.getElementById('tmode-hint');
+        if (e.target.id === 'btn-tmode-box') {
+          _scanSubtype = 'box';
+          if (btnBox)     { btnBox.classList.add('btn-primary'); btnBox.classList.remove('btn-ghost'); }
+          if (btnPartial) { btnPartial.classList.remove('btn-primary'); btnPartial.classList.add('btn-ghost'); }
+          if (hint) hint.textContent = '📦 Transfert de boîtes entières';
+        }
+        if (e.target.id === 'btn-tmode-partial') {
+          _scanSubtype = 'partial';
+          if (btnPartial) { btnPartial.classList.add('btn-primary'); btnPartial.classList.remove('btn-ghost'); }
+          if (btnBox)     { btnBox.classList.remove('btn-primary'); btnBox.classList.add('btn-ghost'); }
+          if (hint) hint.textContent = '💊 Transfert d’unités (boîte sécable)';
+        }
+        if (e.target.id === 'btn-action-launch') _launchFromActionModal();
+      });
     } else {
       modal.addEventListener('click', function(e) {
+        if (e.target.id === 'btn-tmode-box') {
+          _scanSubtype = null;
+          var t1 = document.getElementById('btn-tmode-box'), t2 = document.getElementById('btn-tmode-partial');
+          if (t1) { t1.classList.add('btn-primary'); t1.classList.remove('btn-secondary'); }
+          if (t2) { t2.classList.remove('btn-primary'); t2.classList.add('btn-secondary'); }
+        }
+        if (e.target.id === 'btn-tmode-partial') {
+          _scanSubtype = 'partial';
+          var t3 = document.getElementById('btn-tmode-box'), t4 = document.getElementById('btn-tmode-partial');
+          if (t4) { t4.classList.add('btn-primary'); t4.classList.remove('btn-secondary'); }
+          if (t3) { t3.classList.remove('btn-primary'); t3.classList.add('btn-secondary'); }
+        }
         if (e.target.id === 'btn-action-launch') _launchFromActionModal();
       });
     }
@@ -5096,8 +5126,6 @@ input, select, textarea { font-family: inherit; box-sizing: border-box; }
   function _launchFromActionModal() {
     var multiCheck    = document.getElementById('modal-action-multi');
     var targetInput   = document.getElementById('modal-action-target');
-    var transferMode  = document.getElementById('modal-transfer-mode');
-    var delivMode     = document.getElementById('modal-delivery-mode');
     _scanMulti   = !!(multiCheck && multiCheck.checked);
     _scanTarget  = targetInput  ? targetInput.value  : null;
     /* Transfer : stocker le mode (box/partial) dans _scanSubtype */
